@@ -123,7 +123,15 @@ def message_pour(commande, config) -> str:
         titre=config.get("titre_live", ""),
         code=commande["code_acces"] or "",
         reference=commande["reference"],
-        lien=url_du_site(config) + url_for("acces"),
+        # {lien} ouvre le direct d'un seul geste, le mot de passe étant porté
+        # par l'URL. {lien_simple} reste disponible pour une saisie manuelle.
+        # La forme courte est construite à la main : url_for(), appelé hors
+        # de cette route, produirait « ?code_du_lien=… » — fonctionnel mais
+        # inélégant dans un message envoyé à un client.
+        lien=(f"{url_du_site(config)}/acces/{commande['code_acces']}"
+              if commande["code_acces"]
+              else url_du_site(config) + url_for("acces")),
+        lien_simple=url_du_site(config) + url_for("acces"),
     )
 
 
@@ -224,28 +232,43 @@ def suivi(reference):
 
 
 @app.route("/acces", methods=["GET", "POST"])
-def acces():
+@app.route("/acces/<code_du_lien>", methods=["GET"])
+def acces(code_du_lien=None):
     config = bd.lire_config()
     # L'appareil est identifié dès l'affichage du formulaire : c'est lui qui
     # sert de compteur anti-force brute, pas seulement l'adresse IP.
     appareil = identifiant_appareil()
 
-    def rendre():
+    def rendre(code_saisi=""):
+        # En cas d'échec d'un lien direct, le mot de passe reste affiché dans
+        # le champ : le client n'a pas à le retrouver dans sa conversation.
         return poser_cookie_appareil(
-            app.make_response(render_template("acces.html")), appareil
+            app.make_response(
+                render_template("acces.html", code_saisi=code_saisi)
+            ),
+            appareil,
         )
 
-    if request.method != "POST":
+    # Lien direct reçu par WhatsApp : /acces/DTV-XXXX-XXXX, ou /acces?c=…
+    # Le mot de passe passe alors par l'URL et subit exactement les mêmes
+    # contrôles qu'une saisie au clavier — quota d'appareils compris.
+    code_url = code_du_lien or request.args.get("c", "")
+
+    if request.method != "POST" and not code_url:
         return rendre()
 
     ip = ip_client()
-    code = (request.form.get("code") or "").strip().upper().replace(" ", "")
+    if request.method == "POST":
+        code = (request.form.get("code") or "")
+    else:
+        code = code_url
+    code = code.strip().upper().replace(" ", "")
 
     # Le direct terminé est annoncé avant tout : le message est le même pour
     # un code valide comme pour une faute de frappe, inutile de pénaliser.
     if u.live_termine(config):
         flash("Ce direct est terminé. Merci d'avoir suivi Dialaw TV !", "info")
-        return rendre()
+        return rendre(code)
 
     essais_appareil, essais_ip = bd.tentatives_recentes(
         ip, appareil, app.config["FENETRE_TENTATIVES"]
@@ -256,7 +279,7 @@ def acces():
             "Trop de tentatives. Patientez 15 minutes ou contactez le support.",
             "erreur",
         )
-        return rendre()
+        return rendre(code)
 
     commande = bd.commande_par_code(code)
     if commande is None:
@@ -265,7 +288,7 @@ def acces():
             "Mot de passe invalide ou désactivé. Vérifiez celui reçu par WhatsApp.",
             "erreur",
         )
-        return rendre()
+        return rendre(code)
 
     max_appareils = max(1, entier(config.get("max_appareils"), 1))
     if not bd.enregistrer_session(commande["id"], appareil, ip,
@@ -276,7 +299,7 @@ def acces():
             "Il est personnel : contactez le support si c'est une erreur.",
             "erreur",
         )
-        return rendre()
+        return rendre(code)
 
     bd.purger_tentatives(appareil)
     session["commande_id"] = commande["id"]

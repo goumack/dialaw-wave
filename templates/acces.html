@@ -13,6 +13,7 @@
   <form method="post" class="formulaire">
     <label for="code" class="sr-only">Mot de passe d'accès</label>
     <input type="text" id="code" name="code" class="champ-code"
+           value="{{ code_saisi | default('', true) }}"
            placeholder="DTV-XXXX-XXXX" required autofocus
            autocomplete="off" autocapitalize="characters" spellcheck="false">
 

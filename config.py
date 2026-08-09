@@ -94,11 +94,12 @@ CONFIG_PAR_DEFAUT = {
     "message_whatsapp": (
         "Bonjour {nom}, votre paiement de {montant} {devise} pour "
         "« {titre} » est confirmé.\n\n"
-        "▸ Lien pour regarder : {lien}\n"
-        "▸ Votre mot de passe : {code}\n\n"
-        "Ouvrez le lien, saisissez le mot de passe, et le direct démarre.\n\n"
-        "Ce mot de passe est personnel et lié à votre numéro : "
-        "merci de ne pas le partager.\n"
+        "▸ Touchez ce lien, le direct s'ouvre :\n"
+        "{lien}\n\n"
+        "Rien d'autre à faire : votre accès est déjà dans le lien.\n\n"
+        "Ce lien est personnel et n'ouvre le direct que sur un seul "
+        "appareil. Le partager vous en priverait vous-même.\n\n"
+        "(Mot de passe {code}, si on vous le demande un jour.)\n"
         "Bon direct !\n"
         "Dialaw TV"
     ),
