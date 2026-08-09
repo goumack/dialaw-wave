@@ -11,7 +11,11 @@ services:
     plan: free
     region: frankfurt          # le plus proche du Sénégal parmi les régions gratuites
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    # Pas de --bind explicite : Render fournit $PORT à gunicorn, et un
+    # « $PORT » non développé par le shell ferait écouter sur un port mort,
+    # avec un service affiché « live » mais injoignable (x-render-routing:
+    # no-server). Un seul worker : le plan gratuit ne dispose que de 512 Mo.
+    startCommand: gunicorn app:app --workers 1 --timeout 120 --log-file -
 
     envVars:
       - key: FLASK_ENV
