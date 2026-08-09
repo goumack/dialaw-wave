@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}Accéder au direct{% endblock %}
+
+{% block contenu %}
+
+<section class="carte carte--formulaire carte--centre">
+  <h1>Entrez votre mot de passe</h1>
+  <p class="carte-texte">
+    Celui reçu par WhatsApp après votre paiement, de la forme
+    <span class="code-inline">DTV-XXXX-XXXX</span>.
+  </p>
+
+  <form method="post" class="formulaire">
+    <label for="code" class="sr-only">Mot de passe d'accès</label>
+    <input type="text" id="code" name="code" class="champ-code"
+           placeholder="DTV-XXXX-XXXX" required autofocus
+           autocomplete="off" autocapitalize="characters" spellcheck="false">
+
+    <button type="submit" class="bouton bouton--principal bouton--large">
+      Ouvrir le direct
+    </button>
+  </form>
+
+  <p class="sous-bouton">
+    Pas encore de mot de passe ?
+    <a href="{{ url_for('commander') }}">Acheter mon accès</a>
+  </p>
+</section>
+
+{% endblock %}

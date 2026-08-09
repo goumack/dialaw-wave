@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titre %}Direct{% endblock %}
+{% block classe_body %}page-live{% endblock %}
+
+{% block contenu %}
+
+<section class="live">
+  <div class="live-entete">
+    <h1>{{ cfg.titre_live }}</h1>
+    <a class="bouton bouton--discret" href="{{ url_for('quitter') }}">Quitter</a>
+  </div>
+
+  {% if youtube_id %}
+    <div class="lecteur {% if cfg.afficher_chat == '1' %}lecteur--avec-chat{% endif %}">
+      <div class="lecteur-video">
+        <iframe
+          src="https://www.youtube.com/embed/{{ youtube_id }}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+          title="{{ cfg.titre_live }}"
+          frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowfullscreen></iframe>
+        {# Filigrane : décourage la rediffusion de l'écran, le code est traçable #}
+        <span class="filigrane">{{ filigrane }}</span>
+      </div>
+
+      {% if cfg.afficher_chat == '1' %}
+        <div class="lecteur-chat">
+          <iframe
+            src="https://www.youtube.com/live_chat?v={{ youtube_id }}&embed_domain={{ domaine }}"
+            title="Chat du direct"
+            frameborder="0"></iframe>
+        </div>
+      {% endif %}
+    </div>
+
+    <p class="note-live">
+      Connecté en tant que <strong>{{ commande.nom }}</strong> ·
+      mot de passe {{ commande.code_acces }}. Cet accès est nominatif et
+      tracé : tout partage entraîne sa désactivation immédiate.
+    </p>
+
+  {% else %}
+    <div class="carte carte--centre">
+      <h2>Le direct n'a pas encore démarré</h2>
+      <p class="carte-texte">
+        Votre accès est bien valide. La diffusion sera disponible ici même
+        {% if cfg.live_debut %}à partir du {{ cfg.live_debut | date_fr }}{% endif %}.
+        Rafraîchissez cette page à l'heure du direct.
+      </p>
+      <a class="bouton bouton--principal" href="{{ url_for('live') }}">
+        Actualiser
+      </a>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}

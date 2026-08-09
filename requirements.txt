@@ -1,0 +1,5 @@
+Flask>=3.0
+# Serveur de production (Render, VPS Linux)
+gunicorn>=21.2 ; sys_platform != "win32"
+# Serveur de production sous Windows
+waitress>=3.0 ; sys_platform == "win32"

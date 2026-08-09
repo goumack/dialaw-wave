@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block contenu %}
+
+<section class="hero">
+  {% if termine %}
+    <span class="etiquette etiquette--fin">Direct terminé</span>
+  {% elif ventes_ouvertes %}
+    <span class="etiquette etiquette--live">Accès en direct</span>
+  {% else %}
+    <span class="etiquette etiquette--fin">Ventes fermées</span>
+  {% endif %}
+
+  <h1>{{ cfg.titre_live }}</h1>
+  <p class="hero-texte">{{ cfg.description_live }}</p>
+
+  {% if cfg.live_debut %}
+    <p class="hero-date">📅 Diffusion le {{ cfg.live_debut | date_fr }}</p>
+  {% endif %}
+
+  <div class="prix-bloc">
+    <span class="prix">{{ cfg.prix | montant }}</span>
+    <span class="prix-devise">{{ devise }}</span>
+    <span class="prix-mention">accès unique, sans abonnement</span>
+  </div>
+
+  {% if ventes_ouvertes and not termine %}
+    <a class="bouton bouton--principal bouton--large"
+       href="{{ url_for('commander') }}">Acheter mon accès</a>
+    <p class="sous-bouton">
+      Paiement par <strong>Wave</strong> · Mot de passe envoyé sur WhatsApp
+    </p>
+  {% elif termine %}
+    <p class="message-neutre">
+      Ce direct est terminé. Merci d'avoir suivi Dialaw TV, rendez-vous
+      pour la prochaine émission.
+    </p>
+  {% else %}
+    <p class="message-neutre">
+      La billetterie n'est pas encore ouverte. Revenez un peu plus tard.
+    </p>
+  {% endif %}
+
+  <p class="deja-code">
+    Vous avez déjà payé ?
+    <a href="{{ url_for('acces') }}">Saisir mon mot de passe</a>
+  </p>
+</section>
+
+<section class="etapes">
+  <h2>Comment ça marche</h2>
+  <ol class="liste-etapes">
+    <li>
+      <span class="numero">1</span>
+      <div>
+        <h3>Vous commandez</h3>
+        <p>Votre numéro WhatsApp suffit. Une référence de commande vous
+           est attribuée.</p>
+      </div>
+    </li>
+    <li>
+      <span class="numero">2</span>
+      <div>
+        <h3>Vous payez avec Wave</h3>
+        <p>Un bouton vous emmène directement sur le lien Wave officiel de
+           Dialaw TV. Le montant est déjà indiqué.</p>
+      </div>
+    </li>
+    <li>
+      <span class="numero">3</span>
+      <div>
+        <h3>Vous recevez votre mot de passe</h3>
+        <p>Dès la vérification du paiement, votre mot de passe personnel
+           arrive sur WhatsApp et s'affiche sur votre page de suivi.</p>
+      </div>
+    </li>
+    <li>
+      <span class="numero">4</span>
+      <div>
+        <h3>Vous regardez le direct</h3>
+        <p>Vous saisissez votre mot de passe sur ce site et l'émission
+           démarre, sans quitter la page.</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+{% endblock %}

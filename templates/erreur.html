@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titre %}Erreur {{ code }}{% endblock %}
+
+{% block contenu %}
+
+<section class="carte carte--centre">
+  <p class="code-erreur">{{ code }}</p>
+  <h1>{{ message }}</h1>
+  <a class="bouton bouton--principal" href="{{ url_for('accueil') }}">
+    Retour à l'accueil
+  </a>
+</section>
+
+{% endblock %}

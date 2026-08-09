@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block titre %}Suivi de ma commande{% endblock %}
+
+{% block entete %}
+  {# Rafraîchissement automatique tant que la commande n'est pas tranchée :
+     le client voit son code apparaître sans rien faire. #}
+  {% if auto_refresh %}<meta http-equiv="refresh" content="8">{% endif %}
+{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+  <p class="fil">Étape 3 sur 3 — votre accès</p>
+  <h1>Commande {{ commande.reference }}</h1>
+
+  {# --- Code disponible ------------------------------------------------- #}
+  {% if commande.statut == 'validee' %}
+    <div class="statut statut--ok">
+      <span class="pastille"></span> Paiement confirmé
+    </div>
+
+    <p class="carte-texte">Voici votre mot de passe personnel :</p>
+
+    <p class="code-geant">{{ commande.code_acces }}</p>
+
+    <a class="bouton bouton--principal bouton--large" href="{{ url_for('acces') }}">
+      Regarder le direct
+    </a>
+    <p class="sous-bouton">
+      Ce mot de passe est valable sur {{ cfg.max_appareils }} appareil(s).
+      Ne le partagez pas : il serait désactivé.
+    </p>
+
+  {# --- En cours de vérification ---------------------------------------- #}
+  {% elif commande.statut == 'a_verifier' %}
+    <div class="statut statut--attente">
+      <span class="pastille pastille--clignote"></span> Vérification du paiement
+    </div>
+
+    <p class="carte-texte">
+      Nous vérifions votre paiement Wave. Dès que c'est confirmé, votre mot de
+      passe s'affiche ici <strong>et</strong> vous arrive sur WhatsApp.
+      Cette page se met à jour toute seule, laissez-la ouverte.
+    </p>
+
+    <div class="recap recap--bloc">
+      <div><span>Nom</span><strong>{{ commande.nom }}</strong></div>
+      <div><span>Montant</span><strong>{{ commande.montant | montant }} {{ devise }}</strong></div>
+      <div><span>Numéro Wave</span><strong>{{ commande.numero_wave_client | tel }}</strong></div>
+      <div><span>Déclaré le</span><strong>{{ commande.paye_declare_le | date_fr }}</strong></div>
+    </div>
+
+  {# --- Paiement pas encore déclaré ------------------------------------- #}
+  {% elif commande.statut == 'nouvelle' %}
+    <div class="statut statut--attente">
+      <span class="pastille"></span> En attente de paiement
+    </div>
+    <p class="carte-texte">
+      Votre commande est enregistrée mais le paiement n'a pas encore été
+      confirmé.
+    </p>
+    <a class="bouton bouton--wave bouton--large"
+       href="{{ url_for('paiement', reference=commande.reference) }}">
+      Reprendre le paiement
+    </a>
+
+  {# --- Rejetée ---------------------------------------------------------- #}
+  {% elif commande.statut == 'rejetee' %}
+    <div class="statut statut--erreur">
+      <span class="pastille"></span> Paiement non retrouvé
+    </div>
+    <p class="carte-texte">
+      Nous n'avons pas retrouvé votre paiement.
+      {% if commande.note %}<br>Motif : {{ commande.note }}{% endif %}
+      <br>Contactez le support avec votre capture d'écran Wave.
+    </p>
+
+  {# --- Révoquée --------------------------------------------------------- #}
+  {% else %}
+    <div class="statut statut--erreur">
+      <span class="pastille"></span> Accès désactivé
+    </div>
+    <p class="carte-texte">
+      Ce mot de passe a été désactivé. Contactez le support si vous pensez
+      qu'il s'agit d'une erreur.
+    </p>
+  {% endif %}
+
+  {% if lien_support %}
+    <p class="sous-bouton">
+      <a href="{{ lien_support }}" target="_blank" rel="noopener">
+        Contacter le support sur WhatsApp
+      </a>
+    </p>
+  {% endif %}
+</section>
+
+<p class="note-page">
+  Gardez ce lien dans vos favoris pour retrouver votre mot de passe :<br>
+  <span class="lien-suivi">{{ request.url }}</span>
+</p>
+
+{% endblock %}

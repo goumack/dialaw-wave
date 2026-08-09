@@ -1,0 +1,22 @@
+# Secrets et données — ne jamais publier
+.env
+*.db
+*.db-journal
+*.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+
+# Système
+Thumbs.db
+desktop.ini
+.DS_Store

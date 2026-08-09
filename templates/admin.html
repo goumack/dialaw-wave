@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block titre %}Commandes{% endblock %}
+{% block classe_body %}page-admin{% endblock %}
+
+{% block entete %}
+  {# Pendant un direct, l'écran des paiements à vérifier s'actualise seul #}
+  {% if statut == 'a_verifier' %}<meta http-equiv="refresh" content="20">{% endif %}
+{% endblock %}
+
+{% block contenu %}
+
+<div class="admin-entete">
+  <h1>Commandes</h1>
+  <a class="bouton bouton--discret" href="{{ url_for('admin_config') }}">
+    Réglages du direct
+  </a>
+</div>
+
+<div class="stats">
+  <div class="stat stat--alerte">
+    <span class="stat-valeur">{{ stats.nb_a_verifier }}</span>
+    <span class="stat-libelle">à vérifier</span>
+  </div>
+  <div class="stat">
+    <span class="stat-valeur">{{ stats.nb_validees }}</span>
+    <span class="stat-libelle">accès vendus</span>
+  </div>
+  <div class="stat">
+    <span class="stat-valeur">{{ stats.encaisse | montant }}</span>
+    <span class="stat-libelle">{{ devise }} encaissés</span>
+  </div>
+  <div class="stat">
+    <span class="stat-valeur">{{ stats.spectateurs }}</span>
+    <span class="stat-libelle">appareils connectés</span>
+  </div>
+</div>
+
+<nav class="filtres">
+  {% for cle, libelle in [
+      ('a_verifier', 'À vérifier'),
+      ('validee', 'Validées'),
+      ('nouvelle', 'Non payées'),
+      ('rejetee', 'Rejetées'),
+      ('revoquee', 'Révoquées'),
+      ('toutes', 'Toutes')] %}
+    <a href="{{ url_for('admin_tableau', statut=cle) }}"
+       class="filtre {% if statut == cle %}filtre--actif{% endif %}">{{ libelle }}</a>
+  {% endfor %}
+</nav>
+
+{% if not lignes %}
+  <p class="vide">Aucune commande dans cette catégorie.</p>
+{% endif %}
+
+<div class="commandes">
+  {% for ligne in lignes %}
+    {% set c = ligne.c %}
+    <article class="commande commande--{{ c.statut }}">
+
+      <header class="commande-entete">
+        <div>
+          <h2>{{ c.nom }}</h2>
+          <p class="commande-meta">
+            <a href="https://wa.me/{{ c.telephone }}" target="_blank"
+               rel="noopener">{{ c.telephone | tel }}</a>
+            · réf. <span class="code-inline">{{ c.reference }}</span>
+          </p>
+        </div>
+        <span class="badge badge--{{ c.statut }}">{{ c.statut | statut }}</span>
+      </header>
+
+      <dl class="commande-details">
+        <div><dt>Montant</dt><dd>{{ c.montant | montant }} {{ devise }}</dd></div>
+        <div><dt>Commandé le</dt><dd>{{ c.cree_le | date_fr }}</dd></div>
+        {% if c.numero_wave_client %}
+          <div>
+            <dt>Wave payeur</dt>
+            <dd>{{ c.numero_wave_client | tel }}</dd>
+          </div>
+        {% endif %}
+        {% if c.paye_declare_le %}
+          <div><dt>Paiement déclaré</dt><dd>{{ c.paye_declare_le | date_fr }}</dd></div>
+        {% endif %}
+        {% if c.code_acces %}
+          <div>
+            <dt>Mot de passe</dt>
+            <dd><span class="code-inline">{{ c.code_acces }}</span></dd>
+          </div>
+        {% endif %}
+        {% if c.traite_par %}
+          <div><dt>Traité par</dt><dd>{{ c.traite_par }}</dd></div>
+        {% endif %}
+        {% if c.note %}
+          <div><dt>Note</dt><dd>{{ c.note }}</dd></div>
+        {% endif %}
+      </dl>
+
+      <div class="commande-actions">
+        {% if c.statut in ('a_verifier', 'nouvelle', 'rejetee', 'revoquee') %}
+          <form method="post"
+                action="{{ url_for('admin_action', commande_id=c.id, action='valider') }}">
+            <input type="hidden" name="statut" value="{{ statut }}">
+            <button class="bouton bouton--valider">✓ Valider le paiement</button>
+          </form>
+        {% endif %}
+
+        {% if ligne.wa %}
+          {# POST : marque la commande envoyée puis ouvre WhatsApp dans un onglet #}
+          <form method="post" target="_blank"
+                action="{{ url_for('admin_action', commande_id=c.id, action='whatsapp') }}">
+            <input type="hidden" name="statut" value="{{ statut }}">
+            <button class="bouton bouton--whatsapp">
+              {% if c.code_envoye %}↻ Renvoyer le mot de passe
+              {% else %}➤ Envoyer sur WhatsApp{% endif %}
+            </button>
+          </form>
+        {% endif %}
+
+        {% if c.statut == 'validee' %}
+          <form method="post"
+                action="{{ url_for('admin_action', commande_id=c.id, action='liberer') }}">
+            <input type="hidden" name="statut" value="{{ statut }}">
+            <button class="bouton bouton--discret">Libérer les appareils</button>
+          </form>
+          <form method="post"
+                action="{{ url_for('admin_action', commande_id=c.id, action='revoquer') }}"
+                onsubmit="return confirm('Révoquer ce mot de passe ? L\'accès du client sera coupé immédiatement.')">
+            <input type="hidden" name="statut" value="{{ statut }}">
+            <button class="bouton bouton--danger">Révoquer</button>
+          </form>
+        {% endif %}
+
+        {% if c.statut in ('a_verifier', 'nouvelle') %}
+          <form method="post"
+                action="{{ url_for('admin_action', commande_id=c.id, action='rejeter') }}">
+            <input type="hidden" name="statut" value="{{ statut }}">
+            <button class="bouton bouton--danger">✕ Rejeter</button>
+          </form>
+        {% endif %}
+      </div>
+
+      {% if c.code_envoye %}
+        <p class="commande-pied">Mot de passe envoyé sur WhatsApp</p>
+      {% endif %}
+
+    </article>
+  {% endfor %}
+</div>
+
+{% endblock %}

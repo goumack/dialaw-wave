@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Commander{% endblock %}
+
+{% block contenu %}
+
+<section class="carte carte--formulaire">
+  <p class="fil">Étape 1 sur 3 — votre numéro</p>
+  <h1>Réserver mon accès</h1>
+  <p class="carte-texte">
+    Votre mot de passe sera envoyé sur ce numéro WhatsApp.
+    Vérifiez-le bien avant de continuer.
+  </p>
+
+  <form method="post" class="formulaire">
+    <label for="telephone">Numéro WhatsApp</label>
+    <input type="tel" id="telephone" name="telephone" value="{{ telephone }}"
+           placeholder="77 123 45 67" required inputmode="tel"
+           autocomplete="tel" autofocus>
+    <small class="aide">
+      C'est le seul champ obligatoire.
+    </small>
+
+    <label for="nom">Votre nom <span class="facultatif">(facultatif)</span></label>
+    <input type="text" id="nom" name="nom" value="{{ nom }}"
+           placeholder="Ex. Awa Diop" autocomplete="name">
+    <small class="aide">
+      Utile pour vous retrouver plus vite si vous nous écrivez.
+    </small>
+
+    <div class="recap">
+      <span>Montant à payer</span>
+      <strong>{{ cfg.prix | montant }} {{ devise }}</strong>
+    </div>
+
+    <button type="submit" class="bouton bouton--principal bouton--large">
+      Continuer vers le paiement
+    </button>
+  </form>
+</section>
+
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block titre %}Paiement Wave{% endblock %}
+
+{% block contenu %}
+
+<section class="carte">
+  <p class="fil">Étape 2 sur 3 — paiement</p>
+  <h1>Payer avec Wave</h1>
+
+  <div class="recap recap--bloc">
+    <div>
+      <span>Montant exact</span>
+      <strong class="gros">{{ commande.montant | montant }} {{ devise }}</strong>
+    </div>
+    <div>
+      <span>Votre référence</span>
+      <strong class="gros code-inline">{{ commande.reference }}</strong>
+    </div>
+  </div>
+
+  <ol class="instructions">
+    <li>Appuyez sur le bouton bleu ci-dessous : Wave s'ouvre avec le paiement.</li>
+    <li>Envoyez <strong>exactement {{ commande.montant | montant }} {{ devise }}</strong>.</li>
+    <li>Si Wave vous propose un motif, écrivez votre référence
+        <strong>{{ commande.reference }}</strong>.</li>
+    <li>Revenez sur cette page et confirmez votre paiement.</li>
+  </ol>
+
+  {% if lien_wave %}
+    <a class="bouton bouton--wave bouton--large" href="{{ lien_wave }}"
+       target="_blank" rel="noopener">
+      Payer {{ commande.montant | montant }} {{ devise }} avec Wave
+    </a>
+  {% else %}
+    <p class="alerte alerte--erreur">
+      Le lien de paiement Wave n'est pas encore configuré.
+      {% if cfg.numero_wave %}
+        Envoyez le montant au <strong>{{ cfg.numero_wave | tel }}</strong>
+        (Wave), puis confirmez ci-dessous.
+      {% else %}
+        Merci de contacter le support.
+      {% endif %}
+    </p>
+  {% endif %}
+
+  {% if cfg.numero_wave and lien_wave %}
+    <p class="sous-bouton">
+      Le lien ne s'ouvre pas ? Envoyez le montant au
+      <strong>{{ cfg.numero_wave | tel }}</strong> sur Wave.
+    </p>
+  {% endif %}
+</section>
+
+<section class="carte carte--formulaire">
+  <h2>J'ai effectué le paiement</h2>
+  <p class="carte-texte">
+    Indiquez le numéro Wave utilisé pour le paiement : il nous permet de
+    retrouver votre transaction et de valider votre accès.
+  </p>
+
+  <form method="post" class="formulaire">
+    <label for="numero_wave">Numéro Wave qui a payé</label>
+    <input type="tel" id="numero_wave" name="numero_wave"
+           value="{{ commande.telephone }}" placeholder="77 123 45 67"
+           required inputmode="tel">
+
+    <button type="submit" class="bouton bouton--principal bouton--large">
+      Confirmer mon paiement
+    </button>
+  </form>
+
+  <p class="sous-bouton">
+    Conservez votre référence <strong>{{ commande.reference }}</strong> et
+    <a href="{{ url_for('suivi', reference=commande.reference) }}">le lien de suivi</a>
+    pour retrouver votre mot de passe.
+  </p>
+</section>
+
+{% endblock %}

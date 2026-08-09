@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block titre %}Réglages du direct{% endblock %}
+{% block classe_body %}page-admin{% endblock %}
+
+{% block contenu %}
+
+<div class="admin-entete">
+  <h1>Réglages du direct</h1>
+  <a class="bouton bouton--discret" href="{{ url_for('admin_tableau') }}">
+    Retour aux commandes
+  </a>
+</div>
+
+<form method="post" class="formulaire formulaire--large">
+
+  <fieldset>
+    <legend>L'émission</legend>
+
+    <label for="titre_live">Titre affiché</label>
+    <input type="text" id="titre_live" name="titre_live" value="{{ cfg.titre_live }}"
+           required>
+
+    <label for="description_live">Description</label>
+    <textarea id="description_live" name="description_live" rows="3">{{ cfg.description_live }}</textarea>
+
+    <div class="grille-2">
+      <div>
+        <label for="live_debut">Début de la diffusion</label>
+        <input type="datetime-local" id="live_debut" name="live_debut"
+               value="{{ cfg.live_debut }}">
+      </div>
+      <div>
+        <label for="live_fin">Fin d'accès</label>
+        <input type="datetime-local" id="live_fin" name="live_fin"
+               value="{{ cfg.live_fin }}">
+        <small class="aide">Passé cette heure, tous les codes cessent de fonctionner.</small>
+      </div>
+    </div>
+
+    <label for="youtube_id">Lien de visionnage du direct YouTube</label>
+    <input type="text" id="youtube_id" name="youtube_id" value="{{ cfg.youtube_id }}"
+           placeholder="https://youtu.be/XXXXXXXXXXX">
+    <small class="aide">
+      Mettez le direct en <strong>« Non répertorié »</strong> sur YouTube, jamais
+      en public : seuls vos clients doivent pouvoir l'ouvrir. Collez l'URL
+      complète, l'identifiant est extrait automatiquement.
+    </small>
+    <p class="avertissement">
+      <strong>Ne collez jamais ici l'adresse RTMP d'OBS</strong>
+      (<span class="code-inline">rtmp://a.rtmp.youtube.com/live2</span> et votre
+      clé de flux). Elle permet de <em>diffuser</em> sur votre chaîne, pas de
+      regarder : la donner reviendrait à confier votre antenne à vos clients.
+      Ce qu'il faut ici, c'est le lien que vous ouvririez pour <em>regarder</em>
+      l'émission.
+    </p>
+
+    <label class="case">
+      <input type="checkbox" name="afficher_chat"
+             {% if cfg.afficher_chat == '1' %}checked{% endif %}>
+      Afficher le chat YouTube à côté du lecteur
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Paiement Wave</legend>
+
+    <div class="grille-2">
+      <div>
+        <label for="prix">Prix de l'accès ({{ devise }})</label>
+        <input type="number" id="prix" name="prix" value="{{ cfg.prix }}"
+               min="0" step="100" required>
+      </div>
+      <div>
+        <label for="numero_wave">Numéro Wave (secours)</label>
+        <input type="tel" id="numero_wave" name="numero_wave"
+               value="{{ cfg.numero_wave }}" placeholder="77 123 45 67">
+      </div>
+    </div>
+
+    <label for="lien_wave">Lien de paiement Wave Business</label>
+    <input type="url" id="lien_wave" name="lien_wave" value="{{ cfg.lien_wave }}"
+           placeholder="https://pay.wave.com/m/M_xxxxxxxxxxxx/c/sn/">
+    <small class="aide">
+      Depuis l'application Wave Business : « Demander un paiement » →
+      copier le lien. C'est ce lien que le client ouvrira.
+    </small>
+
+    <label class="case">
+      <input type="checkbox" name="ventes_ouvertes"
+             {% if cfg.ventes_ouvertes == '1' %}checked{% endif %}>
+      Billetterie ouverte (décochez pour suspendre les ventes)
+    </label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Livraison des codes</legend>
+
+    <div class="grille-2">
+      <div>
+        <label for="whatsapp_support">Numéro WhatsApp du support</label>
+        <input type="tel" id="whatsapp_support" name="whatsapp_support"
+               value="{{ cfg.whatsapp_support }}" placeholder="77 123 45 67">
+      </div>
+      <div>
+        <label for="max_appareils">Appareils autorisés par code</label>
+        <input type="number" id="max_appareils" name="max_appareils"
+               value="{{ cfg.max_appareils }}" min="1" max="10" required>
+        <small class="aide">1 = un seul téléphone par code acheté.</small>
+      </div>
+    </div>
+
+    <label for="site_url">Adresse publique du site</label>
+    <input type="url" id="site_url" name="site_url" value="{{ cfg.site_url }}"
+           placeholder="https://live.dialawtv.sn">
+    <small class="aide">
+      Sert à construire le lien envoyé dans le message WhatsApp. C'est aussi
+      l'adresse à mettre dans la description de votre chaîne YouTube.
+    </small>
+
+    <label for="message_whatsapp">Message WhatsApp envoyé au client</label>
+    <textarea id="message_whatsapp" name="message_whatsapp" rows="9">{{ cfg.message_whatsapp }}</textarea>
+    <small class="aide">
+      Variables disponibles : <code>{nom}</code>, <code>{code}</code>,
+      <code>{lien}</code>, <code>{montant}</code>, <code>{devise}</code>,
+      <code>{titre}</code>, <code>{reference}</code>.
+    </small>
+  </fieldset>
+
+  <button type="submit" class="bouton bouton--principal bouton--large">
+    Enregistrer les réglages
+  </button>
+</form>
+
+{% endblock %}

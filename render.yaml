@@ -1,0 +1,38 @@
+# Déploiement Render — Dialaw TV Live
+#
+# Render lit ce fichier automatiquement à la création du service.
+# Les valeurs marquées « sync: false » sont à saisir dans l'interface Render :
+# elles ne doivent jamais figurer dans le dépôt Git.
+
+services:
+  - type: web
+    name: dialawtv-live
+    runtime: python
+    plan: free
+    region: frankfurt          # le plus proche du Sénégal parmi les régions gratuites
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      # Générée par Render, jamais visible dans le code
+      - key: SECRET_KEY
+        generateValue: true
+      # À saisir dans l'onglet Environment de Render
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_MOT_DE_PASSE
+        sync: false
+      # La base vit sur le disque persistant, pas dans le dossier du code
+      - key: DATABASE_NAME
+        value: /var/data/dialaw_live.db
+
+    # Sans ce disque, la base est effacée à chaque redéploiement — donc
+    # toutes vos ventes et tous les mots de passe distribués.
+    disk:
+      name: donnees
+      mountPath: /var/data
+      sizeGB: 1

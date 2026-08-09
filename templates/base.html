@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>{% block titre %}{{ cfg.titre_live }}{% endblock %} · Dialaw TV</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
+  {% block entete %}{% endblock %}
+</head>
+<body class="{% block classe_body %}{% endblock %}">
+
+  <header class="entete">
+    <a class="marque" href="{{ url_for('accueil') }}">
+      <span class="marque-point"></span>
+      <span>Dialaw<strong>TV</strong></span>
+    </a>
+    <nav class="nav">
+      {% if admin_connecte %}
+        <a href="{{ url_for('admin_tableau') }}">Back-office</a>
+        <a href="{{ url_for('admin_deconnexion') }}">Déconnexion</a>
+      {% else %}
+        <a href="{{ url_for('acces') }}">J'ai un code</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="contenu">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alertes">
+          {% for categorie, message in messages %}
+            <div class="alerte alerte--{{ categorie }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block contenu %}{% endblock %}
+  </main>
+
+  <footer class="pied">
+    <p>© {{ cfg.titre_live }} — Dialaw TV</p>
+    {% if cfg.whatsapp_support %}
+      <p>
+        Besoin d'aide ?
+        <a href="https://wa.me/{{ cfg.whatsapp_support }}">Écrire au support</a>
+      </p>
+    {% endif %}
+  </footer>
+
+</body>
+</html>
