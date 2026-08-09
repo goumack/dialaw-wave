@@ -26,13 +26,25 @@ services:
         sync: false
       - key: ADMIN_MOT_DE_PASSE
         sync: false
-      # La base vit sur le disque persistant, pas dans le dossier du code
-      - key: DATABASE_NAME
-        value: /var/data/dialaw_live.db
 
-    # Sans ce disque, la base est effacée à chaque redéploiement — donc
-    # toutes vos ventes et tous les mots de passe distribués.
-    disk:
-      name: donnees
-      mountPath: /var/data
-      sizeGB: 1
+# ---------------------------------------------------------------------------
+# ATTENTION — le plan gratuit n'accepte pas de disque persistant.
+#
+# La base repart donc de zéro à chaque redéploiement : commandes, mots de
+# passe distribués et réglages sont perdus. Acceptable pour tester, pas pour
+# une soirée de vente réelle.
+#
+# Pour conserver vos données, passez le service en plan payant (Starter,
+# environ 7 $/mois) et rétablissez les deux blocs ci-dessous :
+#
+#     plan: starter          (à la place de « plan: free »)
+#
+#     envVars:
+#       - key: DATABASE_NAME
+#         value: /var/data/dialaw_live.db
+#
+#     disk:
+#       name: donnees
+#       mountPath: /var/data
+#       sizeGB: 1
+# ---------------------------------------------------------------------------
