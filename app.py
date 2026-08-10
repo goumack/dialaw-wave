@@ -311,8 +311,10 @@ def acces(code_du_lien=None):
                                   request.headers.get("User-Agent", ""),
                                   max_appareils):
         flash(
-            f"Ce mot de passe est déjà utilisé sur {max_appareils} appareil(s). "
-            "Il est personnel : contactez le support si c'est une erreur.",
+            f"Ce mot de passe est en cours d'utilisation sur "
+            f"{max_appareils} appareil(s). Fermez le direct sur l'autre "
+            "appareil, ou réessayez dans une demi-heure : la place se libère "
+            "toute seule.",
             "erreur",
         )
         return rendre(code)

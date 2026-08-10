@@ -367,11 +367,21 @@ def statistiques():
 # Sessions d'accès (limitation du nombre d'appareils par code)
 # ---------------------------------------------------------------------------
 
+# Au-delà de ce délai sans activité, un appareil est considéré comme parti
+# et libère sa place. Un client qui a payé doit pouvoir revenir depuis un
+# autre téléphone, ou après avoir vidé son navigateur : le mot de passe est
+# la preuve d'achat, le cookie n'est qu'une commodité.
+INACTIVITE_LIBERATRICE = 30 * 60  # 30 minutes
+
+
 def enregistrer_session(commande_id: int, device_id: str, ip: str,
                         user_agent: str, max_appareils: int) -> bool:
     """Autorise l'appareil s'il est déjà connu, ou si le quota le permet.
 
-    Renvoie False quand le quota d'appareils est déjà atteint.
+    Le quota porte sur les appareils qui regardent *en ce moment*, pas sur
+    tous ceux vus depuis l'achat : les sessions inactives depuis plus de
+    trente minutes sont oubliées. Le partage simultané reste donc empêché,
+    sans jamais enfermer un client qui a changé d'appareil.
     """
     db = get_db()
     connue = db.execute(
@@ -386,6 +396,13 @@ def enregistrer_session(commande_id: int, device_id: str, ip: str,
         )
         db.commit()
         return True
+
+    # Les appareils inactifs cèdent leur place avant tout comptage
+    db.execute(
+        "DELETE FROM sessions_acces WHERE commande_id = ? "
+        "AND derniere_vue < datetime('now', 'localtime', ?)",
+        (commande_id, f"-{INACTIVITE_LIBERATRICE} seconds"),
+    )
 
     total = db.execute(
         "SELECT COUNT(*) AS n FROM sessions_acces WHERE commande_id = ?",
