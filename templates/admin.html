@@ -3,7 +3,9 @@
 {% block classe_body %}page-admin{% endblock %}
 
 {% block entete %}
-  {# Pendant un direct, l'écran des paiements à vérifier s'actualise seul #}
+  {# Pendant un direct, l'écran des paiements à vérifier s'actualise seul.
+     Ce rafraîchissement suffit à empêcher la mise en veille de
+     l'hébergement tant que cette page reste ouverte. #}
   {% if statut == 'a_verifier' %}<meta http-equiv="refresh" content="20">{% endif %}
 {% endblock %}
 

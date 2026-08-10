@@ -25,7 +25,7 @@ from werkzeug.security import check_password_hash
 import connexion as cx
 import database as bd
 import utils as u
-from config import Config
+from config import CONFIG_PAR_DEFAUT, Config
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -55,9 +55,21 @@ app.jinja_env.filters["statut"] = lambda s: LIBELLES_STATUT.get(s, s)
 
 @app.context_processor
 def injecter_config():
-    """Rend la configuration du direct disponible dans tous les gabarits."""
+    """Rend la configuration du direct disponible dans tous les gabarits.
+
+    Ce processeur s'exécute avant chaque rendu : s'il laissait passer une
+    erreur de base, toute page du site renverrait un 500 nu — y compris la
+    page d'erreur, qui a elle aussi besoin de ces valeurs. On retombe donc
+    sur les valeurs par défaut, quitte à afficher une page dégradée.
+    """
+    try:
+        configuration = bd.lire_config()
+    except Exception as erreur:  # noqa: BLE001 — la page doit rester affichable
+        app.logger.error("Configuration illisible — %s", erreur)
+        configuration = dict(CONFIG_PAR_DEFAUT)
+
     return {
-        "cfg": bd.lire_config(),
+        "cfg": configuration,
         "devise": app.config["DEVISE"],
         "admin_connecte": session.get("admin_email"),
     }
@@ -142,7 +154,10 @@ def message_pour(commande, config) -> str:
 
 @app.route("/")
 def accueil():
-    config = bd.lire_config()
+    # La configuration est déjà chargée par le context_processor, qui sait
+    # retomber sur les valeurs par défaut si la base est momentanément
+    # injoignable : la vitrine reste ainsi affichable en toute circonstance.
+    config = injecter_config()["cfg"]
     return render_template(
         "index.html",
         ventes_ouvertes=config.get("ventes_ouvertes") == "1",
@@ -351,6 +366,43 @@ def live():
         # Le chat YouTube exige le domaine hôte exact pour accepter l'intégration
         domaine=request.host.split(":")[0],
     )
+
+
+@app.route("/reveil")
+def reveil():
+    """Point d'appel des services de surveillance (UptimeRobot, cron-job.org).
+
+    L'hébergement gratuit endort le service après 15 minutes sans visite, et
+    le réveil coûte alors une cinquantaine de secondes au premier client. Une
+    requête toutes les 10 à 14 minutes maintient l'application debout.
+
+    La base est interrogée au passage : le service peut répondre alors que
+    PostgreSQL est injoignable, et cette page doit le signaler plutôt que de
+    rassurer à tort.
+    """
+    # get_db() peut échouer dès l'ouverture de la connexion : le try doit
+    # donc l'englober, sinon la surveillance reçoit une erreur 500 muette
+    # au lieu du diagnostic.
+    try:
+        bd.get_db().execute("SELECT 1")
+        base = "ok"
+        code = 200
+    except Exception as erreur:  # noqa: BLE001 — on renvoie l'état, sans planter
+        app.logger.error("Réveil : base injoignable — %s", erreur)
+        base = "injoignable"
+        code = 503
+
+    reponse = jsonify({
+        "service": "dialawtv-live",
+        "etat": "actif",
+        "base": base,
+        "moteur": cx.moteur(),
+        "horodatage": bd.maintenant(),
+    })
+    # Sans cet en-tête, un cache intermédiaire pourrait répondre à la place
+    # du serveur — le service resterait alors endormi malgré les pings.
+    reponse.headers["Cache-Control"] = "no-store"
+    return reponse, code
 
 
 @app.route("/quitter")
