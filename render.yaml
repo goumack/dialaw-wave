@@ -14,8 +14,15 @@ services:
     # Pas de --bind explicite : Render fournit $PORT à gunicorn, et un
     # « $PORT » non développé par le shell ferait écouter sur un port mort,
     # avec un service affiché « live » mais injoignable (x-render-routing:
-    # no-server). Un seul worker : le plan gratuit ne dispose que de 512 Mo.
-    startCommand: gunicorn app:app --workers 1 --timeout 120 --log-file -
+    # no-server).
+    #
+    # ATTENTION — Render fige cette commande à la création du service et
+    # ignore ensuite toute modification faite ici. Pour la changer sur un
+    # service existant : Settings → Build & Deploy → Start Command.
+    startCommand: gunicorn app:app --workers 2 --timeout 120 --log-file -
+
+    # DATABASE_URL n'est pas déclarée ici : elle contient le mot de passe de
+    # la base Neon et se saisit uniquement dans l'onglet Environment.
 
     envVars:
       - key: FLASK_ENV
