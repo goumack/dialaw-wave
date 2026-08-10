@@ -5,13 +5,13 @@ Les valeurs de la colonne `statut` restent sans accent : ce sont des
 identifiants techniques, traduits à l'affichage par le filtre `libelle_statut`.
 """
 
-import sqlite3
 import secrets
 from datetime import datetime
 
 from flask import current_app, g
 from werkzeug.security import generate_password_hash
 
+import connexion as cx
 from config import CONFIG_PAR_DEFAUT
 
 # Alphabet sans caractères ambigus (ni 0/O, ni 1/I/L) : les codes sont dictés
@@ -88,14 +88,13 @@ CREATE INDEX IF NOT EXISTS idx_tentatives_app ON tentatives(appareil, cree_le);
 # ---------------------------------------------------------------------------
 
 def get_db():
-    """Connexion SQLite réutilisée pendant toute la requête."""
+    """Connexion réutilisée pendant toute la requête.
+
+    PostgreSQL si DATABASE_URL est définie (la base survit alors aux
+    redéploiements), SQLite sur fichier sinon.
+    """
     if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"],
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        g.db.row_factory = sqlite3.Row
-        g.db.execute("PRAGMA foreign_keys = ON")
+        g.db = cx.ouvrir(current_app.config["DATABASE"])
     return g.db
 
 
@@ -146,14 +145,30 @@ def _migrer(db):
         "tentatives": {"appareil": "TEXT"},
     }
     for table, colonnes in colonnes_attendues.items():
-        presentes = {
-            ligne["name"]
-            for ligne in db.execute(f"PRAGMA table_info({table})").fetchall()
-        }
+        presentes = _colonnes_existantes(db, table)
         for nom, type_sql in colonnes.items():
             if nom not in presentes:
                 db.execute(f"ALTER TABLE {table} ADD COLUMN {nom} {type_sql}")
     db.commit()
+
+
+def _colonnes_existantes(db, table: str) -> set:
+    """Noms des colonnes d'une table, quel que soit le moteur.
+
+    PRAGMA table_info est propre à SQLite ; PostgreSQL passe par le
+    catalogue information_schema.
+    """
+    if cx.moteur() == cx.POSTGRES:
+        lignes = db.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = ?", (table,)
+        ).fetchall()
+        return {ligne["column_name"] for ligne in lignes}
+
+    return {
+        ligne["name"]
+        for ligne in db.execute(f"PRAGMA table_info({table})").fetchall()
+    }
 
 
 def maintenant():

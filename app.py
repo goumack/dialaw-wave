@@ -22,6 +22,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+import connexion as cx
 import database as bd
 import utils as u
 from config import Config
@@ -559,6 +560,16 @@ def verifier_securite_production():
             "Démarrage refusé : en production, ces variables d'environnement "
             "doivent être définies avec des valeurs personnelles — "
             + ", ".join(manquants)
+        )
+
+    # Sans base distante, l'hébergeur repart d'un disque vierge à chaque
+    # déploiement : les ventes et les mots de passe déjà livrés seraient
+    # perdus sans que rien ne le signale. Mieux vaut refuser de démarrer.
+    if cx.moteur() != cx.POSTGRES:
+        raise RuntimeError(
+            "Démarrage refusé : DATABASE_URL n'est pas définie. En ligne, la "
+            "base doit être un PostgreSQL distant (Neon) — sinon toutes les "
+            "données disparaissent au prochain déploiement."
         )
 
 

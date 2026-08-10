@@ -133,10 +133,60 @@ python -c "import secrets; print(secrets.token_hex(32))"
 
 ---
 
-## 6. Mettre le site en ligne
+## 6. Le site en ligne
 
-Sur votre ordinateur, le site n'est visible que par vous. Pour que vos
-clients y accèdent, hébergez-le. Le plus simple, gratuit pour commencer :
+**Adresse publique : https://dialawtv-live.onrender.com**
+
+Deux services, tous deux gratuits :
+
+| Rôle | Service | Ce qu'il contient |
+|---|---|---|
+| Site web | Render (plan gratuit) | Le code, reconstruit à chaque `git push` |
+| Base de données | Neon (PostgreSQL, gratuit) | Réglages, commandes, mots de passe |
+
+**Pourquoi deux services séparés.** Render efface tout son disque à chaque
+redéploiement. Tant que la base vivait sur ce disque, chaque mise à jour du
+code remettait les réglages et les ventes à zéro. En plaçant la base chez
+Neon, elle vit à part et **survit à tous les déploiements**.
+
+La bascule se fait par la seule variable `DATABASE_URL` :
+
+- **absente** → SQLite local, dans un fichier (votre PC) ;
+- **présente** → PostgreSQL distant (en ligne).
+
+En production, l'application **refuse de démarrer** si `DATABASE_URL` est
+absente : mieux vaut une erreur visible qu'un site qui tourne en perdant
+silencieusement les ventes du soir.
+
+### Les variables à définir dans Render
+
+| Variable | Valeur |
+|---|---|
+| `DATABASE_URL` | La chaîne `postgresql://...` fournie par Neon |
+| `ADMIN_EMAIL` | Votre adresse de connexion au back-office |
+| `ADMIN_MOT_DE_PASSE` | Votre mot de passe |
+| `SECRET_KEY` | Générée automatiquement par Render |
+| `FLASK_ENV` | `production` |
+
+### Redéployer après une modification
+
+```bash
+git add -A
+git commit -m "Description de la modification"
+git push
+```
+
+Render reconstruit en 3 à 5 minutes. **Vos données ne bougent pas.**
+
+### Ce qui reste à surveiller sur le plan gratuit
+
+Le service s'endort après 15 minutes sans visite : le premier visiteur
+attend une cinquantaine de secondes. Ouvrez le site vous-même 5 minutes
+avant l'émission pour le réveiller.
+
+### Historique : mettre en ligne ailleurs
+
+Pour héberger sur un autre service :
 
 **Render.com** → *New Web Service* → connectez votre dépôt Git, puis :
 
