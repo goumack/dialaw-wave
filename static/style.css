@@ -772,3 +772,59 @@ legend {
   }
   .lecteur--avec-chat .lecteur-chat { height: 100%; min-height: 420px; }
 }
+
+/* --- Téléphone tourné en paysage ---------------------------------------- */
+/* C'est la position dans laquelle on regarde un match : l'image doit prendre
+   toute la place, et tout le reste s'effacer. */
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .entete,
+  .pied,
+  .live-entete,
+  .note-live,
+  .etat-flux { display: none; }
+
+  .page-live .contenu {
+    max-width: none;
+    padding: 0;
+  }
+
+  .lecteur { gap: 0; }
+
+  .lecteur-video {
+    /* Toute la hauteur disponible, l'image reste entière grâce au ratio */
+    height: 100vh;
+    max-height: 100vh;
+    aspect-ratio: auto;
+    border: none;
+    border-radius: 0;
+  }
+
+  /* Les commandes reviennent en surimpression, mais discrètes et compactes :
+     en paysage, il n'y a plus de place sous l'image. */
+  .commandes-lecteur {
+    position: absolute;
+    right: .5rem;
+    bottom: .5rem;
+    z-index: 5;
+    margin: 0;
+    flex-wrap: nowrap;
+    width: auto;
+    opacity: .55;
+    transition: opacity .2s ease;
+  }
+  .commandes-lecteur:hover,
+  .commandes-lecteur:focus-within { opacity: 1; }
+
+  .commandes-lecteur .commande-lecteur {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: .45rem .7rem;
+    font-size: .78rem;
+    background: rgba(0, 0, 0, .65);
+    border-color: rgba(255, 255, 255, .2);
+    color: #fff;
+  }
+
+  .filigrane { top: .5rem; bottom: auto; }
+}
