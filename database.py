@@ -327,6 +327,33 @@ def marquer_code_envoye(commande_id: int):
     db.commit()
 
 
+def vider_commandes() -> dict:
+    """Efface toutes les commandes, leurs accès et les tentatives.
+
+    Les réglages du direct sont conservés : on repart à zéro côté clients
+    sans avoir à ressaisir le lien Wave, le prix ou le message WhatsApp.
+
+    Opération irréversible : les mots de passe déjà distribués cessent
+    aussitôt de fonctionner. Renvoie le décompte de ce qui a été supprimé,
+    pour pouvoir l'annoncer honnêtement.
+    """
+    db = get_db()
+    compte = {
+        "commandes": db.execute(
+            "SELECT COUNT(*) AS n FROM commandes").fetchone()["n"],
+        "appareils": db.execute(
+            "SELECT COUNT(*) AS n FROM sessions_acces").fetchone()["n"],
+    }
+
+    # sessions_acces part en cascade, mais SQLite n'applique les clés
+    # étrangères que si le PRAGMA est actif : on supprime explicitement.
+    db.execute("DELETE FROM sessions_acces")
+    db.execute("DELETE FROM commandes")
+    db.execute("DELETE FROM tentatives")
+    db.commit()
+    return compte
+
+
 def liste_commandes(statut: str = None, limite: int = 200):
     db = get_db()
     if statut and statut != "toutes":

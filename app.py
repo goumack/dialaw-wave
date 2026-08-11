@@ -570,6 +570,41 @@ def admin_config():
     return render_template("admin_config.html")
 
 
+MOT_DE_CONFIRMATION = "EFFACER"
+
+
+@app.route("/admin/reinitialiser", methods=["POST"])
+@admin_requis
+def admin_reinitialiser():
+    """Efface toutes les commandes après confirmation écrite.
+
+    Un mot à recopier plutôt qu'un simple clic : cette action coupe l'accès
+    de clients qui ont payé, elle ne doit pas pouvoir partir d'un geste
+    machinal sur un téléphone, en pleine émission.
+    """
+    saisie = (request.form.get("confirmation") or "").strip().upper()
+    if saisie != MOT_DE_CONFIRMATION:
+        flash(
+            f"Réinitialisation annulée : il faut écrire « {MOT_DE_CONFIRMATION} » "
+            "pour confirmer.",
+            "erreur",
+        )
+        return redirect(url_for("admin_config"))
+
+    compte = bd.vider_commandes()
+    app.logger.warning(
+        "Réinitialisation par %s : %s commandes, %s appareils supprimés",
+        session["admin_email"], compte["commandes"], compte["appareils"],
+    )
+    flash(
+        f"Réinitialisation effectuée : {compte['commandes']} commande(s) et "
+        f"{compte['appareils']} appareil(s) supprimés. "
+        "Vos réglages sont conservés.",
+        "succes",
+    )
+    return redirect(url_for("admin_tableau"))
+
+
 @app.route("/admin/commande/<int:commande_id>/appareils")
 @admin_requis
 def admin_appareils(commande_id):

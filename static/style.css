@@ -610,6 +610,21 @@ legend {
   margin: .9rem 0 0; font-size: .8rem; color: var(--succes);
 }
 
+/* --- Zone dangereuse du back-office ------------------------------------- */
+
+.zone-danger {
+  margin-top: 3rem;
+  padding: 1.35rem;
+  background: rgba(239, 71, 87, .06);
+  border: 1px solid rgba(239, 71, 87, .35);
+  border-radius: var(--rayon);
+}
+.zone-danger h2 { color: #ff8f9b; font-size: 1.05rem; margin-bottom: .6rem; }
+.zone-danger p { margin: 0 0 .6rem; font-size: .92rem; color: var(--texte-doux); }
+.zone-danger strong { color: var(--texte); }
+.zone-danger-detail { font-size: .86rem !important; }
+.zone-danger .bouton--danger { margin-top: 1rem; }
+
 /* --- Page d'erreur ------------------------------------------------------ */
 
 .code-erreur {

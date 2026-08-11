@@ -131,4 +131,34 @@
   </button>
 </form>
 
+{# Zone dangereuse, volontairement à l'écart des réglages du quotidien #}
+<section class="zone-danger">
+  <h2>Repartir à zéro</h2>
+  <p>
+    Efface <strong>toutes les commandes</strong>, les mots de passe distribués
+    et les appareils connectés. À faire entre deux émissions, jamais pendant.
+  </p>
+  <p class="zone-danger-detail">
+    Vos réglages sont conservés : titre, prix, lien Wave, numéro WhatsApp et
+    message restent en place. En revanche, les clients ayant déjà reçu un mot
+    de passe <strong>perdront leur accès immédiatement</strong> — cette action
+    est irréversible.
+  </p>
+
+  <form method="post" action="{{ url_for('admin_reinitialiser') }}"
+        class="formulaire formulaire--serre"
+        onsubmit="return confirm('Effacer définitivement toutes les commandes et couper l\'accès des clients ?')">
+    <label for="confirmation">
+      Pour confirmer, écrivez <span class="code-inline">EFFACER</span>
+    </label>
+    <input type="text" id="confirmation" name="confirmation"
+           placeholder="EFFACER" autocomplete="off"
+           autocapitalize="characters" spellcheck="false" required>
+
+    <button type="submit" class="bouton bouton--danger">
+      Effacer toutes les commandes
+    </button>
+  </form>
+</section>
+
 {% endblock %}
