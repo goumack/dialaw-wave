@@ -20,6 +20,12 @@
         <span class="filigrane">{{ filigrane }}</span>
       </div>
       <p id="etat-flux" class="etat-flux">Connexion au direct…</p>
+
+      {# En HLS, le bord du direct est connu : on saute à la fin du tampon. #}
+      <button type="button" id="btn-direct-flux" class="bouton-direct">
+        <span class="point-direct" aria-hidden="true"></span>
+        Revenir au direct
+      </button>
     </div>
 
     <p class="note-live">
@@ -63,6 +69,23 @@
           message("Le direct ne peut pas s'afficher : le serveur de "
                 + "diffusion doit être en HTTPS.", "etat-flux--erreur");
         }
+
+        // Rattrape l'instant présent : on va à la fin de ce qui est
+        // téléchargé, c'est-à-dire au bord du direct.
+        document.getElementById("btn-direct-flux").addEventListener("click", function () {
+          if (video.seekable && video.seekable.length) {
+            video.currentTime = video.seekable.end(video.seekable.length - 1);
+          } else if (video.buffered && video.buffered.length) {
+            video.currentTime = video.buffered.end(video.buffered.length - 1);
+          }
+          video.play();
+
+          var etiquette = this;
+          etiquette.classList.add("bouton-direct--actif");
+          setTimeout(function () {
+            etiquette.classList.remove("bouton-direct--actif");
+          }, 1200);
+        });
 
         function lancerLecture() {
           var essai = video.play();
@@ -155,12 +178,22 @@
 
       {# Les commandes sont sous le lecteur, jamais par-dessus : sur un
          téléphone, elles masqueraient une partie de l'action. #}
+      {# Sur un direct, aucune durée totale n'existe : on ne peut pas mesurer
+         un retard de façon fiable. Ce bouton ne calcule donc rien — il saute
+         au point le plus avancé que le lecteur a en mémoire, ce qui rattrape
+         l'instant présent quel que soit le retard accumulé. #}
+      <button type="button" id="btn-direct" class="bouton-direct">
+        <span class="point-direct" aria-hidden="true"></span>
+        Revenir au direct
+      </button>
+
       <div class="commandes-lecteur">
         <button type="button" id="btn-son" class="commande-lecteur"
                 aria-label="Activer ou couper le son">Activer le son</button>
         <button type="button" id="btn-plein" class="commande-lecteur"
                 aria-label="Plein écran">Plein écran</button>
       </div>
+
 
       <script>
         (function () {
@@ -200,6 +233,23 @@
             muet = !muet;
             commander(muet ? "mute" : "unMute");
             majBoutonSon();
+          });
+
+          // « Revenir au direct » : on demande une position volontairement
+          // hors d'atteinte. YouTube la ramène au point le plus avancé
+          // disponible, c'est-à-dire l'instant présent — sans qu'on ait
+          // besoin de connaître une durée, qui n'existe pas sur un direct.
+          document.getElementById("btn-direct").addEventListener("click", function () {
+            cadre.contentWindow.postMessage(JSON.stringify({
+              event: "command", func: "seekTo", args: [86400, true]
+            }), "https://www.youtube.com");
+            commander("playVideo");
+
+            var etiquette = this;
+            etiquette.classList.add("bouton-direct--actif");
+            setTimeout(function () {
+              etiquette.classList.remove("bouton-direct--actif");
+            }, 1200);
           });
 
           document.getElementById("btn-plein").addEventListener("click", function () {

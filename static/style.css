@@ -529,6 +529,47 @@ legend {
 }
 
 /* Commandes reconstruites, celles de YouTube étant masquées */
+/* Retour au direct : rattrape l'instant présent quand le spectateur a
+   décroché — coupure réseau, ralentissement, pause involontaire. */
+.bouton-direct {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  width: 100%;
+  margin-top: .7rem;
+  padding: .7rem 1rem;
+  border: 1px solid rgba(239, 71, 87, .4);
+  border-radius: var(--rayon-sm);
+  background: rgba(239, 71, 87, .1);
+  color: #ff8f9b;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.bouton-direct:hover { background: rgba(239, 71, 87, .18); }
+.bouton-direct:focus-visible { outline: 2px solid var(--danger); outline-offset: 2px; }
+
+/* Retour visuel : le spectateur doit voir que son geste a été pris en compte,
+   même si l'image met une seconde à rattraper. */
+.bouton-direct--actif {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
+.point-direct {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulsation 1.6s infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .point-direct { animation: none; }
+}
+
 /* Barre de commandes SOUS le lecteur : posée par-dessus, elle masquerait
    l'action sur un écran de téléphone. */
 .commandes-lecteur {
