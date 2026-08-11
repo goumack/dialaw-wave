@@ -151,19 +151,22 @@
           Regarder le direct
         </button>
 
-        <div class="commandes-lecteur">
-          <button type="button" id="btn-son" class="commande"
-                  aria-label="Activer ou couper le son">Son</button>
-          <button type="button" id="btn-plein" class="commande"
-                  aria-label="Plein écran">Plein écran</button>
-        </div>
+      </div>
+
+      {# Les commandes sont sous le lecteur, jamais par-dessus : sur un
+         téléphone, elles masqueraient une partie de l'action. #}
+      <div class="commandes-lecteur">
+        <button type="button" id="btn-son" class="commande-lecteur"
+                aria-label="Activer ou couper le son">Activer le son</button>
+        <button type="button" id="btn-plein" class="commande-lecteur"
+                aria-label="Plein écran">Plein écran</button>
       </div>
 
       <script>
         (function () {
           "use strict";
           var cadre    = document.getElementById("tube");
-          var boite    = cadre.parentNode;
+          var boite    = cadre.closest(".lecteur-video");
           var demarrer = document.getElementById("btn-demarrer");
           var btnSon   = document.getElementById("btn-son");
           // La lecture démarre muette : c'est la seule condition à laquelle
