@@ -10,7 +10,105 @@
     <a class="bouton bouton--discret" href="{{ url_for('quitter') }}">Quitter</a>
   </div>
 
-  {% if youtube_id %}
+  {% if flux_direct %}
+    {# Diffusion par flux relayé : aucun logo, aucun lien sortant, et
+       l'adresse du serveur d'origine n'apparaît jamais dans la page. #}
+    <div class="lecteur">
+      <div class="lecteur-video">
+        <video id="direct" controls autoplay playsinline
+               poster="" preload="none"></video>
+        <span class="filigrane">{{ filigrane }}</span>
+      </div>
+      <p id="etat-flux" class="etat-flux">Connexion au direct…</p>
+    </div>
+
+    <p class="note-live">
+      Connecté en tant que <strong>{{ commande.nom }}</strong> ·
+      mot de passe {{ commande.code_acces }}. Cet accès est nominatif et
+      tracé : tout partage entraîne sa désactivation immédiate.
+    </p>
+
+    <script>
+      (function () {
+        "use strict";
+        var video = document.getElementById("direct");
+        var etat  = document.getElementById("etat-flux");
+        var flux  = {{ flux_direct | tojson }};
+
+        function message(texte, classe) {
+          etat.textContent = texte;
+          etat.className = "etat-flux " + (classe || "");
+        }
+
+        video.addEventListener("playing", function () {
+          message("En direct", "etat-flux--direct");
+        });
+
+        video.addEventListener("error", function () {
+          message("Le direct n'est pas encore disponible. "
+                + "Cette page réessaie toute seule.", "etat-flux--erreur");
+        });
+
+        function lancerLecture() {
+          var essai = video.play();
+          if (essai && essai.catch) {
+            // L'autoplay est souvent refusé sur mobile : le spectateur
+            // touchera simplement le bouton de lecture.
+            essai.catch(function () {
+              message("Touchez le lecteur pour démarrer le direct.");
+            });
+          }
+        }
+
+        // Safari et iOS lisent le HLS nativement. Ailleurs — Chrome Android
+        // en tête, donc la majorité des spectateurs — il faut hls.js, chargé
+        // seulement dans ce cas : 400 Ko épargnés sur les autres appareils.
+        if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = flux;
+          lancerLecture();
+        } else {
+          var script = document.createElement("script");
+          script.src = "{{ url_for('static', filename='hls.min.js') }}";
+
+          script.onload = function () {
+            if (!window.Hls || !window.Hls.isSupported()) {
+              message("Votre navigateur ne peut pas lire ce direct. "
+                    + "Essayez avec Chrome ou Safari.", "etat-flux--erreur");
+              return;
+            }
+            var lecteur = new window.Hls({ liveDurationInfinity: true });
+            lecteur.loadSource(flux);
+            lecteur.attachMedia(video);
+            lecteur.on(window.Hls.Events.MANIFEST_PARSED, lancerLecture);
+
+            lecteur.on(window.Hls.Events.ERROR, function (_, donnees) {
+              if (!donnees.fatal) { return; }
+              // Une coupure réseau ou un direct pas encore démarré ne doit
+              // pas laisser une page morte : on relance la lecture.
+              if (donnees.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
+                message("Reconnexion au direct…");
+                lecteur.startLoad();
+              } else if (donnees.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
+                lecteur.recoverMediaError();
+              } else {
+                message("Le direct n'est pas encore disponible. "
+                      + "Cette page réessaie toute seule.", "etat-flux--erreur");
+                setTimeout(function () { lecteur.startLoad(); }, 10000);
+              }
+            });
+          };
+
+          script.onerror = function () {
+            message("Impossible de charger le lecteur. Rafraîchissez la page.",
+                    "etat-flux--erreur");
+          };
+
+          document.body.appendChild(script);
+        }
+      })();
+    </script>
+
+  {% elif youtube_id %}
     <div class="lecteur {% if cfg.afficher_chat == '1' %}lecteur--avec-chat{% endif %}">
       <div class="lecteur-video">
         <iframe

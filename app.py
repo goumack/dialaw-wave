@@ -24,6 +24,7 @@ from werkzeug.security import check_password_hash
 
 import connexion as cx
 import database as bd
+import diffusion as dif
 import utils as u
 from config import CONFIG_PAR_DEFAUT, Config
 
@@ -348,10 +349,28 @@ def live():
         flash("Ce direct est terminé. Merci d'avoir suivi Dialaw TV !", "info")
         return redirect(url_for("acces"))
 
-    youtube_id = u.extraire_youtube_id(config.get("youtube_id", ""))
+    # Deux modes de diffusion selon ce qui est configuré : une adresse de
+    # flux HLS est relayée par le site (aucun logo, aucun lien sortant),
+    # sinon on retombe sur l'intégration YouTube.
+    source = config.get("youtube_id", "")
+    if dif.est_flux_direct(source):
+        bd.enregistrer_session(
+            commande["id"], identifiant_appareil(), ip_client(),
+            request.headers.get("User-Agent", ""), 10_000,
+        )
+        return render_template(
+            "live.html",
+            commande=commande,
+            flux_direct=url_for("flux", ressource=dif.chemin_relatif(source)),
+            youtube_id="",
+            filigrane=f"{commande['nom']} · {u.telephone_masque(commande['telephone'])}",
+            domaine=request.host.split(":")[0],
+        )
+
+    youtube_id = u.extraire_youtube_id(source)
     if not youtube_id:
         return render_template("live.html", commande=commande, youtube_id="",
-                               filigrane="", domaine="")
+                               flux_direct="", filigrane="", domaine="")
 
     # Le quota est ignoré ici : l'appareil est déjà autorisé, on ne fait
     # qu'actualiser sa dernière vue pour le comptage des spectateurs.
@@ -364,6 +383,7 @@ def live():
         "live.html",
         commande=commande,
         youtube_id=youtube_id,
+        flux_direct="",
         filigrane=f"{commande['nom']} · {u.telephone_masque(commande['telephone'])}",
         # Le chat YouTube exige le domaine hôte exact pour accepter l'intégration
         domaine=request.host.split(":")[0],
@@ -405,6 +425,54 @@ def reveil():
     # du serveur — le service resterait alors endormi malgré les pings.
     reponse.headers["Cache-Control"] = "no-store"
     return reponse, code
+
+
+def spectateur_autorise():
+    """Commande du spectateur connecté, ou None si l'accès n'est plus valide.
+
+    Relue en base à chaque appel : une révocation coupe le flux en cours.
+    """
+    if not session.get("commande_id"):
+        return None
+    commande = bd.commande_par_code(session.get("code", ""))
+    if commande is None or commande["id"] != session["commande_id"]:
+        return None
+    if u.live_termine(bd.lire_config()):
+        return None
+    return commande
+
+
+@app.route("/flux/<path:ressource>")
+def flux(ressource):
+    """Relaie le flux vidéo, réservé aux spectateurs ayant payé.
+
+    Chaque segment repasse par ce contrôle : couper un accès interrompt la
+    lecture en cours, sans attendre que le spectateur recharge la page.
+    """
+    if spectateur_autorise() is None:
+        abort(403)
+
+    url_flux = bd.lire_config().get("youtube_id", "")
+    if not dif.est_flux_direct(url_flux):
+        abort(404)
+
+    if not dif.chemin_autorise(ressource):
+        abort(403)
+
+    resultat = dif.recuperer(dif.url_absolue(url_flux, ressource))
+    if resultat is None:
+        # Le serveur de diffusion ne répond pas : c'est lui, pas nous
+        abort(502)
+
+    contenu, _ = resultat
+    if ressource.lower().endswith(".m3u8"):
+        contenu = dif.reecrire_playlist(contenu, "/flux/")
+
+    reponse = app.make_response(contenu)
+    reponse.headers["Content-Type"] = dif.type_mime(ressource)
+    # Un direct ne se met pas en cache : le spectateur doit voir l'instant
+    reponse.headers["Cache-Control"] = "no-store"
+    return reponse
 
 
 @app.route("/quitter")
@@ -545,13 +613,15 @@ def admin_config():
             )
             return redirect(url_for("admin_config"))
 
-        # On enregistre l'identifiant YouTube normalisé, quelle que soit l'URL collée
-        if valeurs["youtube_id"]:
+        # Une adresse de flux HLS est conservée telle quelle : c'est le mode
+        # de diffusion sans YouTube, relayé par le site.
+        if valeurs["youtube_id"] and not dif.est_flux_direct(valeurs["youtube_id"]):
             identifiant = u.extraire_youtube_id(valeurs["youtube_id"])
             if not identifiant:
                 flash(
-                    "Lien YouTube non reconnu. Collez l'URL du direct "
-                    "ou son identifiant à 11 caractères.",
+                    "Source non reconnue. Collez soit l'URL de votre direct "
+                    "YouTube, soit l'adresse de votre flux se terminant "
+                    "par .m3u8",
                     "erreur",
                 )
                 return redirect(url_for("admin_config"))
