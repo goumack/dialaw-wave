@@ -21,11 +21,12 @@
       </div>
       <p id="etat-flux" class="etat-flux">Connexion au direct…</p>
 
-      {# En HLS, le bord du direct est connu : on saute à la fin du tampon. #}
-      <button type="button" id="btn-direct-flux" class="bouton-direct">
-        <span class="point-direct" aria-hidden="true"></span>
-        Revenir au direct
-      </button>
+      <div class="commandes-lecteur">
+        <button type="button" id="btn-reculer-flux" class="commande-lecteur"
+                aria-label="Reculer de 10 secondes">◀ 10 s</button>
+        <button type="button" id="btn-avancer-flux" class="commande-lecteur"
+                aria-label="Avancer de 10 secondes">10 s ▶</button>
+      </div>
     </div>
 
     <p class="note-live">
@@ -70,21 +71,33 @@
                 + "diffusion doit être en HTTPS.", "etat-flux--erreur");
         }
 
-        // Rattrape l'instant présent : on va à la fin de ce qui est
-        // téléchargé, c'est-à-dire au bord du direct.
-        document.getElementById("btn-direct-flux").addEventListener("click", function () {
+        function deplacerFlux(secondes) {
+          var cible = video.currentTime + secondes;
+          // On ne dépasse pas le bord du direct : au-delà, il n'y a rien.
           if (video.seekable && video.seekable.length) {
-            video.currentTime = video.seekable.end(video.seekable.length - 1);
-          } else if (video.buffered && video.buffered.length) {
-            video.currentTime = video.buffered.end(video.buffered.length - 1);
+            var bord = video.seekable.end(video.seekable.length - 1);
+            var debut = video.seekable.start(0);
+            cible = Math.min(Math.max(cible, debut), bord);
           }
+          video.currentTime = Math.max(0, cible);
           video.play();
+        }
 
-          var etiquette = this;
-          etiquette.classList.add("bouton-direct--actif");
+        function signalerFlux(bouton) {
+          bouton.classList.add("commande-lecteur--actif");
           setTimeout(function () {
-            etiquette.classList.remove("bouton-direct--actif");
-          }, 1200);
+            bouton.classList.remove("commande-lecteur--actif");
+          }, 400);
+        }
+
+        document.getElementById("btn-reculer-flux").addEventListener("click", function () {
+          deplacerFlux(-10);
+          signalerFlux(this);
+        });
+
+        document.getElementById("btn-avancer-flux").addEventListener("click", function () {
+          deplacerFlux(10);
+          signalerFlux(this);
         });
 
         function lancerLecture() {
@@ -178,16 +191,11 @@
 
       {# Les commandes sont sous le lecteur, jamais par-dessus : sur un
          téléphone, elles masqueraient une partie de l'action. #}
-      {# Sur un direct, aucune durée totale n'existe : on ne peut pas mesurer
-         un retard de façon fiable. Ce bouton ne calcule donc rien — il saute
-         au point le plus avancé que le lecteur a en mémoire, ce qui rattrape
-         l'instant présent quel que soit le retard accumulé. #}
-      <button type="button" id="btn-direct" class="bouton-direct">
-        <span class="point-direct" aria-hidden="true"></span>
-        Revenir au direct
-      </button>
-
       <div class="commandes-lecteur">
+        <button type="button" id="btn-reculer" class="commande-lecteur"
+                aria-label="Reculer de 10 secondes">◀ 10 s</button>
+        <button type="button" id="btn-avancer" class="commande-lecteur"
+                aria-label="Avancer de 10 secondes">10 s ▶</button>
         <button type="button" id="btn-son" class="commande-lecteur"
                 aria-label="Activer ou couper le son">Activer le son</button>
         <button type="button" id="btn-plein" class="commande-lecteur"
@@ -235,21 +243,53 @@
             majBoutonSon();
           });
 
-          // « Revenir au direct » : on demande une position volontairement
-          // hors d'atteinte. YouTube la ramène au point le plus avancé
-          // disponible, c'est-à-dire l'instant présent — sans qu'on ait
-          // besoin de connaître une durée, qui n'existe pas sur un direct.
-          document.getElementById("btn-direct").addEventListener("click", function () {
+          // L'API YouTube ne permet pas de lire la position à la demande :
+          // elle l'annonce dans ses messages. On la conserve pour pouvoir
+          // se déplacer de dix secondes de part et d'autre.
+          var position = 0;
+
+          window.addEventListener("message", function (evenement) {
+            if (evenement.origin !== "https://www.youtube.com") { return; }
+            try {
+              var donnees = JSON.parse(evenement.data);
+              if (donnees.info && typeof donnees.info.currentTime === "number") {
+                position = donnees.info.currentTime;
+              }
+            } catch (e) { /* message d'un autre format : sans importance */ }
+          });
+
+          // On demande à YouTube de nous tenir informés de la position
+          cadre.addEventListener("load", function () {
             cadre.contentWindow.postMessage(JSON.stringify({
-              event: "command", func: "seekTo", args: [86400, true]
+              event: "listening", id: "tube"
+            }), "https://www.youtube.com");
+          });
+
+          function deplacer(secondes) {
+            position = Math.max(0, position + secondes);
+            cadre.contentWindow.postMessage(JSON.stringify({
+              event: "command", func: "seekTo", args: [position, true]
             }), "https://www.youtube.com");
             commander("playVideo");
+          }
 
-            var etiquette = this;
-            etiquette.classList.add("bouton-direct--actif");
+          function signaler(bouton) {
+            bouton.classList.add("commande-lecteur--actif");
             setTimeout(function () {
-              etiquette.classList.remove("bouton-direct--actif");
-            }, 1200);
+              bouton.classList.remove("commande-lecteur--actif");
+            }, 400);
+          }
+
+          document.getElementById("btn-reculer").addEventListener("click", function () {
+            deplacer(-10);
+            signaler(this);
+          });
+
+          // Sur un direct, avancer n'a d'effet que si le spectateur est en
+          // retard : il n'existe rien après l'instant présent.
+          document.getElementById("btn-avancer").addEventListener("click", function () {
+            deplacer(10);
+            signaler(this);
           });
 
           document.getElementById("btn-plein").addEventListener("click", function () {
