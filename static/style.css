@@ -514,9 +514,48 @@ legend {
   .etat-flux--direct::before { animation: none; }
 }
 
+/* Lecteur YouTube rendu non cliquable : le calque intercepte tous les clics,
+   ce qui neutralise le logo, le titre et « Regarder sur YouTube ». */
+.ecran-protection {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: transparent;
+  cursor: default;
+}
+
+.lecteur-video--protege iframe {
+  pointer-events: none;   /* seconde barrière si le calque est contourné */
+}
+
+/* Commandes reconstruites, celles de YouTube étant masquées */
+.commandes-lecteur {
+  position: absolute;
+  left: .6rem; bottom: .6rem;
+  z-index: 3;
+  display: flex;
+  gap: .5rem;
+}
+
+.commande {
+  padding: .45rem .85rem;
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: var(--rayon-sm);
+  background: rgba(0, 0, 0, .55);
+  color: #fff;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+.commande:hover { background: rgba(0, 0, 0, .75); }
+.commande:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 .filigrane {
   position: absolute;
   right: .6rem; bottom: .6rem;
+  z-index: 3;
   padding: .25rem .6rem;
   border-radius: 6px;
   background: rgba(0, 0, 0, .45);

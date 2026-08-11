@@ -77,6 +77,20 @@
     </p>
 
     <label class="case">
+      <input type="checkbox" name="relayer_flux"
+             {% if cfg.relayer_flux == '1' %}checked{% endif %}>
+      Faire passer le flux par ce site (masque l'adresse du serveur)
+    </label>
+    <p class="avertissement">
+      <strong>À n'activer que pour de petites audiences.</strong>
+      Le relais cache l'adresse de votre serveur de diffusion, mais toute la
+      vidéo transite alors par cet hébergement — environ 1 Go par heure et par
+      spectateur, pour un quota mensuel de 100 Go. Au-delà d'une trentaine de
+      personnes, laissez cette case décochée : les spectateurs iront chercher
+      la vidéo directement sur votre serveur, qui est dimensionné pour cela.
+    </p>
+
+    <label class="case">
       <input type="checkbox" name="afficher_chat"
              {% if cfg.afficher_chat == '1' %}checked{% endif %}>
       Afficher le chat YouTube à côté du lecteur

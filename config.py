@@ -88,6 +88,12 @@ CONFIG_PAR_DEFAUT = {
     "whatsapp_support": "221772197773",   # numéro WhatsApp de la rédaction
     "site_url": "",                  # ex. https://live.dialawtv.sn
     "afficher_chat": "0",            # afficher le chat YouTube à côté du lecteur
+    # « 1 » : le flux passe par le site, qui masque l'adresse d'origine mais
+    # consomme la bande passante de l'hébergement — tenable pour quelques
+    # dizaines de spectateurs seulement.
+    # « 0 » : le navigateur va chercher la vidéo directement sur le serveur
+    # de diffusion. Obligatoire dès que l'audience se compte en centaines.
+    "relayer_flux": "0",
     # Volontairement sans emoji hors du plan Unicode de base : les pictogrammes
     # récents (👉 U+1F449, 🔑 U+1F511) s'affichent en « ? » sur certains
     # clients WhatsApp. Les puces et guillemets ci-dessous passent partout.

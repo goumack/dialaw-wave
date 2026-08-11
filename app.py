@@ -358,10 +358,19 @@ def live():
             commande["id"], identifiant_appareil(), ip_client(),
             request.headers.get("User-Agent", ""), 10_000,
         )
+        # Relais ou lecture directe : au-delà de quelques dizaines de
+        # spectateurs, le relais épuiserait la bande passante de
+        # l'hébergement en quelques minutes. Le serveur de diffusion,
+        # lui, est dimensionné pour ça.
+        if config.get("relayer_flux") == "1":
+            adresse = url_for("flux", ressource=dif.chemin_relatif(source))
+        else:
+            adresse = source
+
         return render_template(
             "live.html",
             commande=commande,
-            flux_direct=url_for("flux", ressource=dif.chemin_relatif(source)),
+            flux_direct=adresse,
             youtube_id="",
             filigrane=f"{commande['nom']} · {u.telephone_masque(commande['telephone'])}",
             domaine=request.host.split(":")[0],
@@ -600,6 +609,7 @@ def admin_config():
         # Cases à cocher : absentes du formulaire lorsqu'elles sont décochées
         valeurs["ventes_ouvertes"] = "1" if request.form.get("ventes_ouvertes") else "0"
         valeurs["afficher_chat"] = "1" if request.form.get("afficher_chat") else "0"
+        valeurs["relayer_flux"] = "1" if request.form.get("relayer_flux") else "0"
 
         # Garde-fou : une URL d'ingestion RTMP collée ici serait publiée à
         # chaque spectateur, qui pourrait alors diffuser sur la chaîne.
