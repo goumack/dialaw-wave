@@ -427,6 +427,14 @@ legend {
   .puce { width: 24px; height: 24px; font-size: .8rem; }
 }
 
+/* Avertissement affiché quand la page est ouverte depuis WhatsApp ou une
+   autre application : leur navigateur intégré ne peut pas lancer Wave. */
+.avertissement-navigateur {
+  margin-bottom: 1rem;
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
 /* --- Paiement de secours ------------------------------------------------ */
 /* Sur certains téléphones, le lien Wave bascule vers le Play Store : ce bloc
    donne la marche à suivre pour payer sans passer par le lien. */

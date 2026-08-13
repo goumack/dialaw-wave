@@ -31,6 +31,22 @@
            {% if lien_wave %}Cette page reste ouverte derrière.{% endif %}</p>
 
         {% if lien_wave %}
+          {% if navigateur_integre %}
+            {# Page ouverte depuis WhatsApp ou Facebook : leur mini-navigateur
+               ne sait pas lancer l'application Wave. #}
+            <div class="alerte alerte--info avertissement-navigateur">
+              <strong>Ouvrez cette page dans votre navigateur.</strong>
+              Vous êtes arrivé ici depuis une application (WhatsApp, Facebook…)
+              et son navigateur intégré ne peut pas ouvrir Wave — il vous
+              enverrait sur Play Store.
+              <br><br>
+              Appuyez sur le menu <strong>⋮</strong> en haut à droite, puis sur
+              <strong>« Ouvrir dans Chrome »</strong>.
+              Sinon, utilisez le paiement par numéro ci-dessous : il fonctionne
+              partout.
+            </div>
+          {% endif %}
+
           <a class="bouton bouton--wave bouton--large" href="{{ lien_wave }}"
              target="_blank" rel="noopener">
             Payer {{ commande.montant | montant }} {{ devise }} avec Wave
@@ -55,7 +71,8 @@
           {# Sur certains téléphones, le lien Wave renvoie vers le Play Store
              au lieu d'ouvrir l'application. Le paiement au numéro évite
              complètement ce détour. #}
-          <details class="secours">
+          {# Déplié d'office quand le lien a peu de chances de fonctionner #}
+          <details class="secours" {% if navigateur_integre %}open{% endif %}>
             <summary>Le lien renvoie vers Play Store ou ne s'ouvre pas ?</summary>
             <div class="secours-corps">
               <p>C'est sans gravité — payez directement depuis votre

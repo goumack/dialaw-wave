@@ -63,6 +63,34 @@ def telephone_masque(numero: str) -> str:
     return "…" + numero[-4:]
 
 
+NAVIGATEURS_INTEGRES = (
+    "fban", "fbav", "fb_iab",   # Facebook
+    "instagram",
+    "line/",
+    "micromessenger",           # WeChat
+    "musical_ly", "bytelocale", # TikTok
+    "twitter",
+    "wv)",                      # WebView Android générique
+)
+
+
+def est_navigateur_integre(user_agent: str) -> bool:
+    """Détecte le mini-navigateur ouvert à l'intérieur d'une application.
+
+    Ces navigateurs (WhatsApp, Facebook, Instagram…) ne savent pas passer la
+    main aux applications installées : un lien Wave y échoue et renvoie vers
+    le Play Store. Le client doit alors ouvrir la page dans son vrai
+    navigateur — encore faut-il le lui dire.
+    """
+    if not user_agent:
+        return False
+    agent = user_agent.lower()
+
+    # WhatsApp ne s'annonce pas toujours : sa WebView Android se reconnaît
+    # au marqueur « wv » que Chrome n'utilise pas.
+    return any(marqueur in agent for marqueur in NAVIGATEURS_INTEGRES)
+
+
 def lien_whatsapp(numero: str, message: str) -> str:
     """Lien wa.me pré-rempli : ouvre WhatsApp avec le message déjà écrit."""
     if not numero:

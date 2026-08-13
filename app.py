@@ -207,8 +207,13 @@ def paiement(reference):
         numero = u.normaliser_telephone(request.form.get("numero_wave"))
         if not numero:
             flash("Indiquez le numéro Wave utilisé pour le paiement.", "erreur")
-            return render_template("paiement.html", commande=commande,
-                                   lien_wave=config.get("lien_wave", ""))
+            return render_template(
+                "paiement.html", commande=commande,
+                lien_wave=config.get("lien_wave", ""),
+                navigateur_integre=u.est_navigateur_integre(
+                    request.headers.get("User-Agent", "")
+                ),
+            )
 
         bd.declarer_paiement(commande["reference"], numero)
         flash(
@@ -221,8 +226,17 @@ def paiement(reference):
     if commande["statut"] not in ("nouvelle", "a_verifier"):
         return redirect(url_for("suivi", reference=commande["reference"]))
 
-    return render_template("paiement.html", commande=commande,
-                           lien_wave=config.get("lien_wave", ""))
+    return render_template(
+        "paiement.html",
+        commande=commande,
+        lien_wave=config.get("lien_wave", ""),
+        # Ouverte depuis WhatsApp, la page tourne dans un mini-navigateur
+        # incapable de lancer l'application Wave : le lien y échoue et
+        # renvoie vers le Play Store. Le client doit le savoir avant de cliquer.
+        navigateur_integre=u.est_navigateur_integre(
+            request.headers.get("User-Agent", "")
+        ),
+    )
 
 
 @app.route("/suivi/<reference>")
