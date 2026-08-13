@@ -529,12 +529,20 @@ legend {
 }
 
 /* Commandes reconstruites, celles de YouTube étant masquées */
-/* Retour visuel d'un saut de 10 secondes : le spectateur doit voir que
-   son geste a porté, même si l'image met un instant à suivre. */
+/* Retour visuel d'un saut : le spectateur doit voir que son geste a porté,
+   même si l'image met un instant à suivre. Le libellé affiche alors le
+   cumul de la rafale d'appuis (10 s, 30 s, 60 s…). */
 .commande-lecteur--actif {
   background: var(--accent);
   border-color: var(--accent);
   color: #1a1204;
+}
+
+/* Le libellé change de longueur pendant la rafale : des chiffres de largeur
+   fixe évitent que les boutons ne sautillent sous le doigt. */
+#btn-reculer, #btn-avancer,
+#btn-reculer-flux, #btn-avancer-flux {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Barre de commandes SOUS le lecteur : posée par-dessus, elle masquerait

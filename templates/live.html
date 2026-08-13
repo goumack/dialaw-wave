@@ -71,9 +71,28 @@
                 + "diffusion doit être en HTTPS.", "etat-flux--erreur");
         }
 
-        function deplacerFlux(secondes) {
-          var cible = video.currentTime + secondes;
-          // On ne dépasse pas le bord du direct : au-delà, il n'y a rien.
+        // Appuis répétés : le pas s'allonge — 10 s, puis 20, puis 30 —
+        // et se stabilise à 30 s pour rester maîtrisable. En HLS le saut est
+        // immédiat, on l'applique à chaque appui ; seul l'affichage du cumul
+        // attend la fin de la rafale.
+        var PAS_FLUX = 10;
+        var PAS_FLUX_MAX = 30;
+        var RAFALE_FLUX = 900;
+        var appuisFlux = 0;
+        var sensFlux = 0;
+        var cumulAffiche = 0;
+        var minuterieFlux = null;
+
+        function deplacerFlux(direction, bouton) {
+          if (direction !== sensFlux) {
+            appuisFlux = 0; cumulAffiche = 0; sensFlux = direction;
+          }
+          appuisFlux += 1;
+          var saut = direction * Math.min(PAS_FLUX * appuisFlux, PAS_FLUX_MAX);
+          cumulAffiche += Math.abs(saut);
+
+          var cible = video.currentTime + saut;
+          // On ne dépasse jamais le bord du direct : au-delà, il n'y a rien.
           if (video.seekable && video.seekable.length) {
             var bord = video.seekable.end(video.seekable.length - 1);
             var debut = video.seekable.start(0);
@@ -81,23 +100,30 @@
           }
           video.currentTime = Math.max(0, cible);
           video.play();
-        }
 
-        function signalerFlux(bouton) {
           bouton.classList.add("commande-lecteur--actif");
-          setTimeout(function () {
-            bouton.classList.remove("commande-lecteur--actif");
-          }, 400);
+          bouton.textContent = (bouton.id === "btn-reculer-flux")
+            ? "◀ " + cumulAffiche + " s"
+            : cumulAffiche + " s ▶";
+
+          clearTimeout(minuterieFlux);
+          minuterieFlux = setTimeout(function () {
+            appuisFlux = 0; cumulAffiche = 0; sensFlux = 0;
+            var r = document.getElementById("btn-reculer-flux");
+            var a = document.getElementById("btn-avancer-flux");
+            r.textContent = "◀ 10 s";
+            a.textContent = "10 s ▶";
+            r.classList.remove("commande-lecteur--actif");
+            a.classList.remove("commande-lecteur--actif");
+          }, RAFALE_FLUX);
         }
 
         document.getElementById("btn-reculer-flux").addEventListener("click", function () {
-          deplacerFlux(-10);
-          signalerFlux(this);
+          deplacerFlux(-1, this);
         });
 
         document.getElementById("btn-avancer-flux").addEventListener("click", function () {
-          deplacerFlux(10);
-          signalerFlux(this);
+          deplacerFlux(1, this);
         });
 
         function lancerLecture() {
@@ -265,31 +291,65 @@
             }), "https://www.youtube.com");
           });
 
-          function deplacer(secondes) {
-            position = Math.max(0, position + secondes);
-            cadre.contentWindow.postMessage(JSON.stringify({
-              event: "command", func: "seekTo", args: [position, true]
-            }), "https://www.youtube.com");
-            commander("playVideo");
+          // Appuis répétés : le pas s'allonge (10, 20, 30 s…) et les sauts
+          // sont regroupés en un seul. Sans ce regroupement, chaque appui
+          // ferait recharger le lecteur — la lecture deviendrait saccadée.
+          var PAS = 10;
+          var PAS_MAX = 30;          // sans plafond, quatre appuis feraient
+                                     // un bond de 100 s : trop brutal
+          var RAFALE = 600;          // millisecondes pour enchaîner les appuis
+          var cumul = 0;             // secondes accumulées, signées
+          var appuis = 0;
+          var minuterie = null;
+          var sens = 0;
+
+          function deplacer(direction, bouton) {
+            // Changer de sens repart de zéro : on ne mélange pas les deux
+            if (direction !== sens) { cumul = 0; appuis = 0; sens = direction; }
+
+            appuis += 1;
+            cumul += direction * Math.min(PAS * appuis, PAS_MAX);
+            afficherCumul(bouton, Math.abs(cumul));
+
+            clearTimeout(minuterie);
+            minuterie = setTimeout(function () {
+              position = Math.max(0, position + cumul);
+              cadre.contentWindow.postMessage(JSON.stringify({
+                event: "command", func: "seekTo", args: [position, true]
+              }), "https://www.youtube.com");
+              commander("playVideo");
+              cumul = 0; appuis = 0; sens = 0;
+              restaurerLibelles();
+            }, RAFALE);
           }
 
-          function signaler(bouton) {
+          var libelleRecul  = "◀ 10 s";
+          var libelleAvance = "10 s ▶";
+
+          function afficherCumul(bouton, secondes) {
             bouton.classList.add("commande-lecteur--actif");
-            setTimeout(function () {
-              bouton.classList.remove("commande-lecteur--actif");
-            }, 400);
+            bouton.textContent = (bouton.id === "btn-reculer")
+              ? "◀ " + secondes + " s"
+              : secondes + " s ▶";
+          }
+
+          function restaurerLibelles() {
+            var r = document.getElementById("btn-reculer");
+            var a = document.getElementById("btn-avancer");
+            r.textContent = libelleRecul;
+            a.textContent = libelleAvance;
+            r.classList.remove("commande-lecteur--actif");
+            a.classList.remove("commande-lecteur--actif");
           }
 
           document.getElementById("btn-reculer").addEventListener("click", function () {
-            deplacer(-10);
-            signaler(this);
+            deplacer(-1, this);
           });
 
           // Sur un direct, avancer n'a d'effet que si le spectateur est en
           // retard : il n'existe rien après l'instant présent.
           document.getElementById("btn-avancer").addEventListener("click", function () {
-            deplacer(10);
-            signaler(this);
+            deplacer(1, this);
           });
 
           document.getElementById("btn-plein").addEventListener("click", function () {
