@@ -427,6 +427,55 @@ legend {
   .puce { width: 24px; height: 24px; font-size: .8rem; }
 }
 
+/* --- Paiement de secours ------------------------------------------------ */
+/* Sur certains téléphones, le lien Wave bascule vers le Play Store : ce bloc
+   donne la marche à suivre pour payer sans passer par le lien. */
+
+.secours {
+  margin-top: .9rem;
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-sm);
+  overflow: hidden;
+}
+.secours summary {
+  padding: .8rem 1rem;
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--wave);
+  cursor: pointer;
+  list-style: none;
+}
+.secours summary::-webkit-details-marker { display: none; }
+.secours summary::after { content: " ▾"; }
+.secours[open] summary::after { content: " ▴"; }
+.secours summary:focus-visible { outline: 2px solid var(--wave); outline-offset: -2px; }
+
+.secours-corps {
+  padding: 0 1rem 1rem;
+  font-size: .9rem;
+  color: var(--texte-doux);
+}
+.secours-corps p { margin: 0 0 .6rem; }
+.secours-corps ol {
+  margin: 0 0 .6rem;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: .4rem;
+}
+.secours-corps strong { color: var(--texte); }
+
+.numero-secours {
+  display: inline-block;
+  padding: .1rem .45rem;
+  border-radius: 5px;
+  background: rgba(26, 195, 245, .14);
+  color: var(--wave) !important;
+  font-family: "Consolas", ui-monospace, monospace;
+  letter-spacing: .03em;
+  user-select: all;
+}
+
 /* --- Statuts de suivi --------------------------------------------------- */
 
 .statut {

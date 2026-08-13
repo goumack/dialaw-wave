@@ -35,6 +35,10 @@
              target="_blank" rel="noopener">
             Payer {{ commande.montant | montant }} {{ devise }} avec Wave
           </a>
+          <p class="aide">
+            L'application Wave doit être installée et à jour. Si le bouton
+            vous emmène sur Play Store, voyez juste en dessous.
+          </p>
         {% else %}
           <p class="alerte alerte--erreur">
             Le lien de paiement Wave n'est pas encore configuré.
@@ -48,10 +52,27 @@
         {% endif %}
 
         {% if cfg.numero_wave and lien_wave %}
-          <p class="aide">
-            Le lien ne s'ouvre pas ? Envoyez le montant au
-            <strong>{{ cfg.numero_wave | tel }}</strong> sur Wave.
-          </p>
+          {# Sur certains téléphones, le lien Wave renvoie vers le Play Store
+             au lieu d'ouvrir l'application. Le paiement au numéro évite
+             complètement ce détour. #}
+          <details class="secours">
+            <summary>Le lien renvoie vers Play Store ou ne s'ouvre pas ?</summary>
+            <div class="secours-corps">
+              <p>C'est sans gravité — payez directement depuis votre
+                 application Wave :</p>
+              <ol>
+                <li>Ouvrez <strong>Wave</strong> sur votre téléphone.</li>
+                <li>Choisissez <strong>Envoyer de l'argent</strong>.</li>
+                <li>Numéro du destinataire :
+                    <strong class="numero-secours">{{ cfg.numero_wave | tel }}</strong></li>
+                <li>Montant :
+                    <strong>{{ commande.montant | montant }} {{ devise }}</strong></li>
+                <li>Motif, si Wave le demande :
+                    <strong>{{ commande.reference }}</strong></li>
+              </ol>
+              <p>Revenez ensuite ici et confirmez votre paiement ci-dessous.</p>
+            </div>
+          </details>
         {% endif %}
       </div>
     </li>

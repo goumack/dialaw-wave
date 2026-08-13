@@ -36,9 +36,20 @@ def normaliser_telephone(brut: str) -> str:
 
 
 def telephone_affichage(numero: str) -> str:
-    """221771234567 -> +221 77 123 45 67"""
+    """221771234567 -> +221 77 123 45 67
+
+    Tolère un numéro non normalisé — certains ont été enregistrés tels que
+    saisis avant que les réglages ne les normalisent : « 77 219 77 73 »
+    doit s'afficher correctement lui aussi.
+    """
     if not numero:
         return ""
+
+    if not numero.startswith(INDICATIF_SENEGAL) or len(numero) != 12:
+        normalise = normaliser_telephone(numero)
+        if normalise:
+            numero = normalise
+
     if numero.startswith(INDICATIF_SENEGAL) and len(numero) == 12:
         n = numero[3:]
         return f"+{INDICATIF_SENEGAL} {n[0:2]} {n[2:5]} {n[5:7]} {n[7:9]}"

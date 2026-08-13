@@ -637,6 +637,11 @@ def admin_config():
                 return redirect(url_for("admin_config"))
             valeurs["youtube_id"] = identifiant
 
+        # Le numéro Wave était enregistré tel que saisi : le filtre d'affichage
+        # ne le reconnaissait pas et il ressortait mal formaté sur la page de
+        # paiement, là où le client en a le plus besoin.
+        valeurs["numero_wave"] = u.normaliser_telephone(valeurs["numero_wave"])
+
         valeurs["whatsapp_support"] = u.normaliser_telephone(
             valeurs["whatsapp_support"]
         )
