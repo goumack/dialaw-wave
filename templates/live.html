@@ -4,6 +4,69 @@
 
 {% block contenu %}
 
+{# Écran affiché si l'accès est coupé pendant la lecture #}
+<div id="acces-coupe" class="acces-coupe" hidden>
+  <div class="acces-coupe-boite">
+    <h2>Votre accès a été interrompu</h2>
+    <p id="acces-coupe-motif">
+      Ce mot de passe a été désactivé, ou le direct est terminé.
+    </p>
+    <a class="bouton bouton--principal" href="{{ url_for('acces') }}">
+      Saisir un autre mot de passe
+    </a>
+    {% if cfg.whatsapp_support %}
+      <a class="bouton bouton--discret"
+         href="https://wa.me/{{ cfg.whatsapp_support }}">
+        Contacter le support
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  (function () {
+    "use strict";
+    // La page reste ouverte des heures pendant un direct : sans cette
+    // surveillance, une révocation ne prendrait effet qu'au rechargement,
+    // c'est-à-dire jamais.
+    var INTERVALLE = 30000;
+    var echecs = 0;
+
+    function couper() {
+      document.getElementById("acces-coupe").hidden = false;
+      document.body.classList.add("acces-verrouille");
+
+      // On arrête réellement la lecture, pas seulement l'affichage
+      var video = document.getElementById("direct");
+      if (video) { video.pause(); video.removeAttribute("src"); video.load(); }
+
+      var cadre = document.getElementById("tube");
+      if (cadre) {
+        cadre.contentWindow.postMessage(JSON.stringify({
+          event: "command", func: "stopVideo", args: []
+        }), "https://www.youtube.com");
+        cadre.removeAttribute("src");
+      }
+      clearInterval(minuterie);
+    }
+
+    var minuterie = setInterval(function () {
+      fetch("{{ url_for('verifier_acces') }}", { cache: "no-store" })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          echecs = 0;
+          if (!d.valide) { couper(); }
+        })
+        .catch(function () {
+          // Une coupure réseau passagère ne doit pas fermer le direct :
+          // on ne conclut qu'après plusieurs échecs consécutifs.
+          echecs += 1;
+          if (echecs >= 4) { clearInterval(minuterie); }
+        });
+    }, INTERVALLE);
+  })();
+</script>
+
 <section class="live">
   <div class="live-entete">
     <h1>{{ cfg.titre_live }}</h1>

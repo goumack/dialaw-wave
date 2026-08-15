@@ -598,6 +598,20 @@ def flux(ressource):
     return reponse
 
 
+@app.route("/verifier-acces")
+def verifier_acces():
+    """Dit à la page du direct si l'accès est toujours valide.
+
+    Sans cela, une révocation ne prend effet qu'au prochain rechargement —
+    autant dire jamais pendant un match. Le lecteur interroge cette adresse
+    régulièrement et se coupe de lui-même.
+    """
+    valide = spectateur_autorise() is not None
+    reponse = jsonify({"valide": valide})
+    reponse.headers["Cache-Control"] = "no-store"
+    return reponse
+
+
 @app.route("/quitter")
 def quitter():
     session.pop("commande_id", None)

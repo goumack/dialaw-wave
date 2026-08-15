@@ -728,6 +728,38 @@ legend {
   text-align: center;
 }
 
+/* --- Accès coupé en pleine lecture -------------------------------------- */
+/* Recouvre l'écran quand une révocation intervient pendant le direct. */
+
+.acces-coupe {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(11, 13, 18, .94);
+  backdrop-filter: blur(6px);
+}
+.acces-coupe[hidden] { display: none; }
+
+.acces-coupe-boite {
+  max-width: 420px;
+  padding: 2rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--bordure);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--rayon);
+  text-align: center;
+  display: grid;
+  gap: .9rem;
+}
+.acces-coupe-boite h2 { margin: 0; color: #ff8f9b; }
+.acces-coupe-boite p { margin: 0; color: var(--texte-doux); font-size: .94rem; }
+
+/* Empêche de faire défiler la page derrière le voile */
+body.acces-verrouille { overflow: hidden; }
+
 /* --- Back-office -------------------------------------------------------- */
 
 .page-admin .contenu { max-width: 980px; }
