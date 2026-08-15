@@ -37,36 +37,14 @@
       </div>
     </div>
 
-    <label for="youtube_id">Source de la diffusion</label>
+    <label for="youtube_id">Lien de visionnage du direct YouTube</label>
     <input type="text" id="youtube_id" name="youtube_id" value="{{ cfg.youtube_id }}"
-           placeholder="https://votre-serveur/flux/playlist.m3u8">
+           placeholder="https://youtu.be/XXXXXXXXXXX">
     <small class="aide">
-      Deux possibilités, au choix :
+      Mettez le direct en <strong>« Non répertorié »</strong> sur YouTube, jamais
+      en public : seuls vos clients doivent pouvoir l'ouvrir. Collez l'URL
+      complète, l'identifiant est extrait automatiquement.
     </small>
-
-    <div class="cadre-table">
-      <table>
-        <thead>
-          <tr><th>Ce que vous collez</th><th>Ce que voit le spectateur</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Votre flux</strong><br>
-                <span class="code-inline">…/playlist.m3u8</span></td>
-            <td><strong>Recommandé.</strong> Lecteur sur votre site, sans logo
-                ni lien vers YouTube. L'adresse de votre serveur reste
-                invisible : rien à copier, rien à partager.</td>
-          </tr>
-          <tr>
-            <td><strong>Un direct YouTube</strong><br>
-                <span class="code-inline">https://youtu.be/…</span></td>
-            <td>Lecteur YouTube intégré. Le logo reste cliquable et mène à la
-                page du direct : un spectateur peut y récupérer votre lien.
-                Réglez alors la vidéo sur « Non répertorié », jamais en public.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
     <p class="avertissement">
       <strong>Ne collez jamais ici l'adresse RTMP d'OBS</strong>
       (<span class="code-inline">rtmp://a.rtmp.youtube.com/live2</span> et votre
@@ -74,20 +52,6 @@
       regarder : la donner reviendrait à confier votre antenne à vos clients.
       Ce qu'il faut ici, c'est le lien que vous ouvririez pour <em>regarder</em>
       l'émission.
-    </p>
-
-    <label class="case">
-      <input type="checkbox" name="relayer_flux"
-             {% if cfg.relayer_flux == '1' %}checked{% endif %}>
-      Faire passer le flux par ce site (masque l'adresse du serveur)
-    </label>
-    <p class="avertissement">
-      <strong>À n'activer que pour de petites audiences.</strong>
-      Le relais cache l'adresse de votre serveur de diffusion, mais toute la
-      vidéo transite alors par cet hébergement — environ 1 Go par heure et par
-      spectateur, pour un quota mensuel de 100 Go. Au-delà d'une trentaine de
-      personnes, laissez cette case décochée : les spectateurs iront chercher
-      la vidéo directement sur votre serveur, qui est dimensionné pour cela.
     </p>
 
     <label class="case">

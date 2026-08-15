@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0d12">
   <title>{% block titre %}{{ cfg.titre_live }}{% endblock %} · Dialaw TV</title>
+
+  {# Aperçu affiché quand le lien est partagé sur WhatsApp ou les réseaux.
+     L'image est générée à partir des réglages : elle ne contient aucune
+     référence à YouTube, qui trahirait le direct non répertorié. #}
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Dialaw TV">
+  <meta property="og:title" content="{{ cfg.titre_live }}">
+  <meta property="og:description"
+        content="{{ cfg.description_live | truncate(160) }}">
+  <meta property="og:image" content="{{ url_apercu }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="{{ request.url }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="{{ cfg.description_live | truncate(160) }}">
+
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📺</text></svg>">
   {% block entete %}{% endblock %}

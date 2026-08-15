@@ -1,5 +1,8 @@
 Flask>=3.0
 
+# Génère l'image d'aperçu affichée quand un lien est partagé sur WhatsApp
+Pillow>=10.0
+
 # Base PostgreSQL distante (Neon) : utilisée dès que DATABASE_URL est définie.
 # C'est elle qui permet aux ventes et aux réglages de survivre aux
 # redéploiements, le serveur web étant reconstruit à chaque mise à jour.

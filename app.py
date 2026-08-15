@@ -22,6 +22,7 @@ from flask import (
 )
 from werkzeug.security import check_password_hash
 
+import apercu as ap
 import connexion as cx
 import database as bd
 import diffusion as dif
@@ -73,6 +74,9 @@ def injecter_config():
         "cfg": configuration,
         "devise": app.config["DEVISE"],
         "admin_connecte": session.get("admin_email"),
+        # Adresse absolue obligatoire : WhatsApp va chercher l'image depuis
+        # ses propres serveurs, un chemin relatif n'y mènerait nulle part.
+        "url_apercu": url_du_site(configuration) + "/apercu.png",
     }
 
 
@@ -411,6 +415,33 @@ def live():
         # Le chat YouTube exige le domaine hôte exact pour accepter l'intégration
         domaine=request.host.split(":")[0],
     )
+
+
+@app.route("/apercu.png")
+def apercu_png():
+    """Image affichée par WhatsApp quand un lien du site est partagé.
+
+    Volontairement publique : WhatsApp la récupère depuis ses propres
+    serveurs, qui n'ont aucune session. Elle ne révèle donc rien de sensible
+    — ni identifiant YouTube, ni mot de passe, seulement le titre et le prix.
+    """
+    config = bd.lire_config()
+    try:
+        image = ap.construire(
+            titre=config.get("titre_live", "Direct Dialaw TV"),
+            prix=u.formater_montant(config.get("prix", 0)),
+            devise=app.config["DEVISE"],
+        )
+    except Exception as erreur:  # noqa: BLE001 — un aperçu ne doit rien casser
+        app.logger.error("Aperçu impossible à générer — %s", erreur)
+        abort(404)
+
+    reponse = app.make_response(image)
+    reponse.headers["Content-Type"] = "image/png"
+    # WhatsApp met l'aperçu en cache : une heure suffit pour qu'un changement
+    # de titre ou de prix soit repris avant l'émission suivante.
+    reponse.headers["Cache-Control"] = "public, max-age=3600"
+    return reponse
 
 
 @app.route("/reveil")
