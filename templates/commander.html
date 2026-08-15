@@ -40,15 +40,35 @@
     <input type="text" id="nom" name="nom" value="{{ nom }}"
            placeholder="Ex. Awa Diop" autocomplete="name">
 
-    <button type="submit" class="bouton bouton--wave bouton--large">
+    <button type="submit" id="btn-payer" class="bouton bouton--wave bouton--large">
       Payer {{ cfg.prix | montant }} {{ devise }} avec Wave
     </button>
 
     <p class="sous-bouton">
-      Wave s'ouvre dans un nouvel onglet. Revenez ensuite ici : votre page de
-      suivi vous attendra.
+      Wave s'ouvre aussitôt. Revenez ensuite ici : votre page de suivi vous
+      attendra.
     </p>
   </form>
 </section>
+
+{% if cfg.lien_wave %}
+<script>
+  (function () {
+    "use strict";
+    var formulaire = document.querySelector(".formulaire");
+    var bouton = document.getElementById("btn-payer");
+
+    formulaire.addEventListener("submit", function () {
+      // Wave doit s'ouvrir depuis le clic lui-même : déclenché plus tard,
+      // le navigateur le prendrait pour une fenêtre surgissante et le
+      // bloquerait. La page, elle, poursuit son envoi vers le suivi.
+      if (formulaire.checkValidity()) {
+        window.open({{ cfg.lien_wave | tojson }}, "_blank", "noopener");
+        bouton.textContent = "Ouverture de Wave…";
+      }
+    });
+  })();
+</script>
+{% endif %}
 
 {% endblock %}

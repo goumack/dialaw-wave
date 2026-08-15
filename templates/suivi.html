@@ -47,8 +47,9 @@
        pas encore payé. Une page de plus le ferait décrocher. #}
     {% if lien_wave %}
       <p class="carte-texte">
-        Dernière étape : envoyez
-        <strong>{{ commande.montant | montant }} {{ devise }}</strong> avec Wave.
+        Wave devrait s'être ouvert dans un autre onglet. Si ce n'est pas le
+        cas, utilisez le bouton ci-dessous pour envoyer
+        <strong>{{ commande.montant | montant }} {{ devise }}</strong>.
       </p>
 
       {% if navigateur_integre %}
