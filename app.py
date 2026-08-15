@@ -76,9 +76,10 @@ def injecter_config():
         "admin_connecte": session.get("admin_email"),
         # Adresse absolue obligatoire : WhatsApp va chercher l'image depuis
         # ses propres serveurs, un chemin relatif n'y mènerait nulle part.
-        # Une affiche personnalisée prime sur l'image générée.
-        "url_apercu": (configuration.get("image_apercu", "").strip()
-                       or url_du_site(configuration) + "/apercu.png"),
+        # Une affiche téléversée prime sur l'image générée automatiquement.
+        "url_apercu": url_du_site(configuration) + (
+            "/affiche" if configuration.get("image_apercu") else "/apercu.png"
+        ),
     }
 
 
@@ -419,6 +420,50 @@ def live():
     )
 
 
+NOM_AFFICHE = "affiche_apercu"
+TAILLE_MAX_AFFICHE = 3 * 1024 * 1024      # 3 Mo
+TYPES_AFFICHE = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
+
+
+def enregistrer_affiche(fichier):
+    """Valide puis stocke l'affiche téléversée. Renvoie un message d'erreur
+    en cas de refus, None si tout s'est bien passé."""
+    contenu = fichier.read(TAILLE_MAX_AFFICHE + 1)
+    if len(contenu) > TAILLE_MAX_AFFICHE:
+        return ("Image trop lourde : 3 Mo maximum. "
+                "Réduisez-la avant de la déposer.")
+    if not contenu:
+        return "Le fichier est vide."
+
+    # On identifie le format par le contenu, pas par l'extension : un nom
+    # de fichier ne prouve rien.
+    if contenu[:3] == b"\xff\xd8\xff":
+        type_mime = "image/jpeg"
+    elif contenu[:8] == b"\x89PNG\r\n\x1a\n":
+        type_mime = "image/png"
+    elif contenu[:4] == b"RIFF" and contenu[8:12] == b"WEBP":
+        type_mime = "image/webp"
+    else:
+        return "Format non reconnu. Déposez une image JPEG, PNG ou WebP."
+
+    bd.enregistrer_fichier(NOM_AFFICHE, contenu, type_mime)
+    return None
+
+
+@app.route("/affiche")
+def affiche():
+    """Sert l'affiche téléversée. Publique : WhatsApp doit pouvoir la lire."""
+    fichier = bd.lire_fichier(NOM_AFFICHE)
+    if fichier is None:
+        abort(404)
+
+    contenu, type_mime = fichier
+    reponse = app.make_response(contenu)
+    reponse.headers["Content-Type"] = type_mime
+    reponse.headers["Cache-Control"] = "public, max-age=3600"
+    return reponse
+
+
 @app.route("/apercu.png")
 def apercu_png():
     """Image affichée par WhatsApp quand un lien du site est partagé.
@@ -649,9 +694,12 @@ def admin_config():
         champs = (
             "titre_live", "description_live", "prix", "lien_wave", "numero_wave",
             "youtube_id", "live_debut", "live_fin", "max_appareils",
-            "whatsapp_support", "message_whatsapp", "site_url", "image_apercu",
+            "whatsapp_support", "message_whatsapp", "site_url",
         )
         valeurs = {c: (request.form.get(c) or "").strip() for c in champs}
+
+        # Renseigné par le téléversement plus bas, jamais saisi au clavier
+        valeurs["image_apercu"] = bd.lire_config().get("image_apercu", "")
 
         # Cases à cocher : absentes du formulaire lorsqu'elles sont décochées
         valeurs["ventes_ouvertes"] = "1" if request.form.get("ventes_ouvertes") else "0"
@@ -689,27 +737,19 @@ def admin_config():
         # paiement, là où le client en a le plus besoin.
         valeurs["numero_wave"] = u.normaliser_telephone(valeurs["numero_wave"])
 
-        # L'affiche personnalisée doit être une image joignable par WhatsApp,
-        # et surtout pas une miniature YouTube : celle-ci porte l'identifiant
-        # du direct non répertorié, qui deviendrait lisible dans chaque
-        # message partagé.
-        affiche = valeurs["image_apercu"]
-        if affiche:
-            if "img.youtube.com" in affiche or "ytimg.com" in affiche:
-                flash(
-                    "⚠️ Cette image vient de YouTube : elle révélerait le lien "
-                    "de votre direct dans tous les messages WhatsApp. "
-                    "Utilisez une affiche à vous, ou laissez le champ vide.",
-                    "erreur",
-                )
+        # Affiche téléversée depuis le back-office : stockée en base, elle
+        # survit aux déploiements qui effacent le disque de l'hébergement.
+        fichier = request.files.get("affiche")
+        if fichier and fichier.filename:
+            erreur = enregistrer_affiche(fichier)
+            if erreur:
+                flash(erreur, "erreur")
                 return redirect(url_for("admin_config"))
+            valeurs["image_apercu"] = "interne"
 
-            if not affiche.lower().startswith(("http://", "https://")):
-                flash(
-                    "L'adresse de l'affiche doit commencer par https://",
-                    "erreur",
-                )
-                return redirect(url_for("admin_config"))
+        if request.form.get("supprimer_affiche"):
+            bd.supprimer_fichier(NOM_AFFICHE)
+            valeurs["image_apercu"] = ""
 
         valeurs["whatsapp_support"] = u.normaliser_telephone(
             valeurs["whatsapp_support"]

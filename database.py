@@ -59,6 +59,13 @@ CREATE TABLE IF NOT EXISTS sessions_acces (
     FOREIGN KEY (commande_id) REFERENCES commandes(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS fichiers (
+    nom       TEXT PRIMARY KEY,
+    type_mime TEXT NOT NULL,
+    contenu   BLOB NOT NULL,
+    cree_le   TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS tentatives (
     id       INTEGER PRIMARY KEY AUTOINCREMENT,
     ip       TEXT NOT NULL,
@@ -185,6 +192,42 @@ def lire_config():
     valeurs = dict(CONFIG_PAR_DEFAUT)
     valeurs.update({l["cle"]: l["valeur"] for l in lignes})
     return valeurs
+
+
+def enregistrer_fichier(nom: str, contenu: bytes, type_mime: str):
+    """Stocke un fichier binaire en base plutôt que sur le disque.
+
+    L'hébergement efface son disque à chaque déploiement : une affiche
+    déposée dans un dossier disparaîtrait au prochain « git push ». En base,
+    elle survit — comme les réglages et les commandes.
+    """
+    db = get_db()
+    db.execute(
+        "INSERT INTO fichiers (nom, type_mime, contenu, cree_le) "
+        "VALUES (?, ?, ?, ?) "
+        "ON CONFLICT(nom) DO UPDATE SET type_mime = excluded.type_mime, "
+        "contenu = excluded.contenu, cree_le = excluded.cree_le",
+        (nom, type_mime, contenu, maintenant()),
+    )
+    db.commit()
+
+
+def lire_fichier(nom: str):
+    """Renvoie (contenu, type_mime) ou None si le fichier n'existe pas."""
+    ligne = get_db().execute(
+        "SELECT contenu, type_mime FROM fichiers WHERE nom = ?", (nom,)
+    ).fetchone()
+    if ligne is None:
+        return None
+    contenu = ligne["contenu"]
+    # psycopg renvoie un memoryview, sqlite3 des octets : on uniformise
+    return bytes(contenu), ligne["type_mime"]
+
+
+def supprimer_fichier(nom: str):
+    db = get_db()
+    db.execute("DELETE FROM fichiers WHERE nom = ?", (nom,))
+    db.commit()
 
 
 def ecrire_config(valeurs: dict):

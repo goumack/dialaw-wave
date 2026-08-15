@@ -66,6 +66,8 @@ _REMPLACEMENTS = (
     (re.compile(r"\bINTEGER\s+PRIMARY\s+KEY\s+AUTOINCREMENT\b", re.I), "SERIAL PRIMARY KEY"),
     # Insertion ignorée si la clé existe déjà
     (re.compile(r"\bINSERT\s+OR\s+IGNORE\s+INTO\b", re.I), "INSERT INTO"),
+    # Données binaires : BLOB est propre à SQLite
+    (re.compile(r"\bBLOB\b", re.I), "BYTEA"),
 )
 
 

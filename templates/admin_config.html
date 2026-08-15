@@ -11,7 +11,9 @@
   </a>
 </div>
 
-<form method="post" class="formulaire formulaire--large">
+{# enctype obligatoire : sans lui, le fichier de l'affiche n'est pas transmis #}
+<form method="post" class="formulaire formulaire--large"
+      enctype="multipart/form-data">
 
   <fieldset>
     <legend>L'émission</legend>
@@ -117,27 +119,25 @@
       l'adresse à mettre dans la description de votre chaîne YouTube.
     </small>
 
-    <label for="image_apercu">Affiche affichée sur WhatsApp</label>
-    <input type="url" id="image_apercu" name="image_apercu"
-           value="{{ cfg.image_apercu }}"
-           placeholder="https://…/affiche-du-match.jpg">
+    <label for="affiche">Affiche affichée sur WhatsApp</label>
+    <input type="file" id="affiche" name="affiche"
+           accept="image/jpeg,image/png,image/webp">
     <small class="aide">
-      Adresse d'une image (JPEG ou PNG), idéalement 1200 × 630 pixels.
-      <strong>Laissez vide</strong> pour utiliser l'image générée
-      automatiquement à partir du titre et du prix.
+      JPEG, PNG ou WebP, 3 Mo maximum. Format idéal : 1200 × 630 pixels.
+      L'image est conservée en base : elle survit aux mises à jour du site.
+      Sans affiche, une image est générée à partir du titre et du prix.
     </small>
-    <p class="avertissement">
-      <strong>N'utilisez jamais une miniature YouTube</strong>
-      (<span class="code-inline">img.youtube.com/…</span>) : elle contient
-      l'identifiant de votre direct non répertorié, qui deviendrait lisible
-      dans chaque message WhatsApp partagé. L'enregistrement le refusera.
-    </p>
 
-    <p class="apercu-actuel">
-      Voici ce que verront vos clients :
-    </p>
+    <p class="apercu-actuel">Ce que verront vos clients :</p>
     <img class="apercu-vignette" src="{{ url_apercu }}"
          alt="Aperçu partagé sur WhatsApp" loading="lazy">
+
+    {% if cfg.image_apercu %}
+      <label class="case">
+        <input type="checkbox" name="supprimer_affiche">
+        Supprimer cette affiche et revenir à l'image générée
+      </label>
+    {% endif %}
 
     <label for="message_whatsapp">Message WhatsApp envoyé au client</label>
     <textarea id="message_whatsapp" name="message_whatsapp" rows="9">{{ cfg.message_whatsapp }}</textarea>

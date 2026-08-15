@@ -65,6 +65,10 @@ class Config:
     MAX_TENTATIVES_IP = 120          # par adresse IP
     FENETRE_TENTATIVES = 15 * 60     # 15 minutes, en secondes
 
+    # Plafond des envois : sans lui, un fichier énorme serait chargé en
+    # mémoire avant même d'être examiné.
+    MAX_CONTENT_LENGTH = 4 * 1024 * 1024   # 4 Mo
+
     # --- Divers ---------------------------------------------------------
     DEVISE = "FCFA"
 
