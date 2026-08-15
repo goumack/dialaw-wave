@@ -788,6 +788,70 @@ body.acces-verrouille { overflow: hidden; }
 .stat-libelle { font-size: .78rem; text-transform: uppercase;
                 letter-spacing: .06em; color: var(--texte-faible); }
 
+/* Recherche d'une commande : nom, numéro, référence ou mot de passe */
+.recherche {
+  display: flex;
+  gap: .5rem;
+  margin-bottom: 1rem;
+}
+.recherche input {
+  flex: 1;
+  min-width: 0;
+  padding: .7rem .9rem;
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-sm);
+  color: var(--texte);
+  font: inherit;
+  font-size: .92rem;
+}
+.recherche input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(245, 177, 61, .18);
+}
+.recherche .bouton { flex: 0 0 auto; padding: .7rem 1rem; font-size: .88rem; }
+
+.resultat-recherche {
+  margin: 0 0 1rem;
+  font-size: .88rem;
+  color: var(--texte-doux);
+}
+
+/* Les deux numéros d'une commande, côte à côte pour la vérification */
+.deux-numeros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin-bottom: .9rem;
+  padding: .8rem;
+  background: var(--fond-doux);
+  border-radius: var(--rayon-sm);
+}
+.numero-bloc { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.numero-etiquette {
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--texte-faible);
+}
+.numero-valeur {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--texte);
+  word-break: break-word;
+}
+a.numero-valeur { color: var(--accent); }
+
+.numeros-differents {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-top: .5rem;
+  border-top: 1px solid var(--bordure);
+  font-size: .8rem;
+  color: var(--accent);
+}
+
 .filtres {
   display: flex; gap: .45rem; flex-wrap: wrap;
   margin-bottom: 1.25rem;

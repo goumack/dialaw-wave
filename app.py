@@ -658,7 +658,13 @@ def admin_deconnexion():
 @admin_requis
 def admin_tableau():
     statut = request.args.get("statut", "a_verifier")
+    recherche = (request.args.get("q") or "").strip()
     config = bd.lire_config()
+
+    # Une recherche ignore le filtre par statut : on cherche un client, pas
+    # une catégorie — il peut être dans n'importe quel état.
+    commandes = (bd.rechercher_commandes(recherche) if recherche
+                 else bd.liste_commandes(statut))
 
     # Un lien WhatsApp prêt à l'emploi est calculé pour chaque code déjà généré
     lignes = [
@@ -668,11 +674,11 @@ def admin_tableau():
                                   message_pour(commande, config))
                   if commande["code_acces"] else "",
         }
-        for commande in bd.liste_commandes(statut)
+        for commande in commandes
     ]
 
     return render_template("admin.html", lignes=lignes, statut=statut,
-                           stats=bd.statistiques())
+                           recherche=recherche, stats=bd.statistiques())
 
 
 @app.route("/admin/commande/<int:commande_id>/<action>", methods=["POST"])

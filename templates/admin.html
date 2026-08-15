@@ -6,7 +6,11 @@
   {# Pendant un direct, l'écran des paiements à vérifier s'actualise seul.
      Ce rafraîchissement suffit à empêcher la mise en veille de
      l'hébergement tant que cette page reste ouverte. #}
-  {% if statut == 'a_verifier' %}<meta http-equiv="refresh" content="20">{% endif %}
+  {# Jamais pendant une recherche : le rechargement effacerait le résultat
+     sous les yeux de celui qui le consulte. #}
+  {% if statut == 'a_verifier' and not recherche %}
+    <meta http-equiv="refresh" content="20">
+  {% endif %}
 {% endblock %}
 
 {% block contenu %}
@@ -37,6 +41,27 @@
   </div>
 </div>
 
+{# Un soir de direct, faire défiler des centaines de commandes pour retrouver
+   un client au téléphone est intenable. #}
+<form method="get" class="recherche" role="search">
+  <input type="search" name="q" value="{{ recherche }}"
+         placeholder="Nom, numéro, référence ou mot de passe…"
+         aria-label="Rechercher une commande" autocomplete="off">
+  <button type="submit" class="bouton bouton--discret">Chercher</button>
+  {% if recherche %}
+    <a class="bouton bouton--discret" href="{{ url_for('admin_tableau') }}">
+      Effacer
+    </a>
+  {% endif %}
+</form>
+
+{% if recherche %}
+  <p class="resultat-recherche">
+    {{ lignes | length }} résultat(s) pour
+    <strong>« {{ recherche }} »</strong> — tous statuts confondus.
+  </p>
+{% endif %}
+
 <nav class="filtres">
   {% for cle, libelle in [
       ('a_verifier', 'À vérifier'),
@@ -63,23 +88,37 @@
         <div>
           <h2>{{ c.nom }}</h2>
           <p class="commande-meta">
-            <a href="https://wa.me/{{ c.telephone }}" target="_blank"
-               rel="noopener">{{ c.telephone | tel }}</a>
-            · réf. <span class="code-inline">{{ c.reference }}</span>
+            réf. <span class="code-inline">{{ c.reference }}</span>
           </p>
         </div>
         <span class="badge badge--{{ c.statut }}">{{ c.statut | statut }}</span>
       </header>
 
+      {# Les deux numéros côte à côte : celui qui a payé sert à retrouver la
+         transaction dans Wave, celui de WhatsApp à livrer le mot de passe.
+         Ils diffèrent souvent — on paie depuis le téléphone d'un proche. #}
+      <div class="deux-numeros">
+        <div class="numero-bloc">
+          <span class="numero-etiquette">Wave — a payé</span>
+          <strong class="numero-valeur">
+            {{ c.numero_wave_client | tel if c.numero_wave_client else "—" }}
+          </strong>
+        </div>
+        <div class="numero-bloc">
+          <span class="numero-etiquette">WhatsApp — à livrer</span>
+          <a class="numero-valeur" href="https://wa.me/{{ c.telephone }}"
+             target="_blank" rel="noopener">{{ c.telephone | tel }}</a>
+        </div>
+        {% if c.numero_wave_client and c.numero_wave_client != c.telephone %}
+          <p class="numeros-differents">
+            Numéros différents : quelqu'un a payé pour ce client.
+          </p>
+        {% endif %}
+      </div>
+
       <dl class="commande-details">
         <div><dt>Montant</dt><dd>{{ c.montant | montant }} {{ devise }}</dd></div>
         <div><dt>Commandé le</dt><dd>{{ c.cree_le | date_fr }}</dd></div>
-        {% if c.numero_wave_client %}
-          <div>
-            <dt>Wave payeur</dt>
-            <dd>{{ c.numero_wave_client | tel }}</dd>
-          </div>
-        {% endif %}
         {% if c.paye_declare_le %}
           <div><dt>Paiement déclaré</dt><dd>{{ c.paye_declare_le | date_fr }}</dd></div>
         {% endif %}

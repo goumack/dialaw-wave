@@ -397,6 +397,33 @@ def vider_commandes() -> dict:
     return compte
 
 
+def rechercher_commandes(terme: str, limite: int = 100):
+    """Cherche une commande par nom, numéro, référence ou mot de passe.
+
+    Un soir de direct, retrouver un client parmi des centaines de commandes
+    en faisant défiler la liste est intenable : la recherche porte donc sur
+    tout ce que le client peut donner au téléphone.
+    """
+    motif = f"%{terme.strip()}%"
+    # Un numéro peut être dicté « 77 123 45 67 » alors qu'il est stocké
+    # « 221771234567 » : on cherche aussi sa forme normalisée.
+    chiffres = "".join(c for c in terme if c.isdigit())
+    motif_numero = f"%{chiffres}%" if chiffres else motif
+
+    # LOWER() des deux côtés : LIKE est sensible à la casse sur PostgreSQL,
+    # pas sur SQLite. Sans cela, « awa » ne trouverait pas « Awa Diop » en
+    # production alors que la recherche marcherait en local.
+    motif_bas = motif.lower()
+
+    return get_db().execute(
+        "SELECT * FROM commandes WHERE "
+        "LOWER(nom) LIKE ? OR LOWER(reference) LIKE ? OR LOWER(code_acces) LIKE ? "
+        "OR telephone LIKE ? OR numero_wave_client LIKE ? "
+        "ORDER BY id DESC LIMIT ?",
+        (motif_bas, motif_bas, motif_bas, motif_numero, motif_numero, limite),
+    ).fetchall()
+
+
 def liste_commandes(statut: str = None, limite: int = 200):
     db = get_db()
     if statut and statut != "toutes":
