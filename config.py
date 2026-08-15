@@ -87,6 +87,9 @@ CONFIG_PAR_DEFAUT = {
     "max_appareils": "1",            # nombre d'appareils autorisés par code
     "whatsapp_support": "221772197773",   # numéro WhatsApp de la rédaction
     "site_url": "",                  # ex. https://live.dialawtv.sn
+    # Affiche personnalisée pour l'aperçu WhatsApp. Vide : une image est
+    # générée à partir du titre et du prix.
+    "image_apercu": "",
     "afficher_chat": "0",            # afficher le chat YouTube à côté du lecteur
     # « 1 » : le flux passe par le site, qui masque l'adresse d'origine mais
     # consomme la bande passante de l'hébergement — tenable pour quelques

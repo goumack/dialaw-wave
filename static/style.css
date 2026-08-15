@@ -427,6 +427,23 @@ legend {
   .puce { width: 24px; height: 24px; font-size: .8rem; }
 }
 
+/* Aperçu de l'affiche telle qu'elle apparaîtra dans une conversation */
+.apercu-actuel {
+  margin: 1rem 0 .5rem;
+  font-size: .85rem;
+  color: var(--texte-faible);
+}
+.apercu-vignette {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1200 / 630;
+  object-fit: cover;
+  background: var(--fond-doux);
+  border: 1px solid var(--bordure);
+  border-radius: var(--rayon-sm);
+}
+
 /* Avertissement affiché quand la page est ouverte depuis WhatsApp ou une
    autre application : leur navigateur intégré ne peut pas lancer Wave. */
 .avertissement-navigateur {

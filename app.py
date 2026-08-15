@@ -76,7 +76,9 @@ def injecter_config():
         "admin_connecte": session.get("admin_email"),
         # Adresse absolue obligatoire : WhatsApp va chercher l'image depuis
         # ses propres serveurs, un chemin relatif n'y mènerait nulle part.
-        "url_apercu": url_du_site(configuration) + "/apercu.png",
+        # Une affiche personnalisée prime sur l'image générée.
+        "url_apercu": (configuration.get("image_apercu", "").strip()
+                       or url_du_site(configuration) + "/apercu.png"),
     }
 
 
@@ -647,7 +649,7 @@ def admin_config():
         champs = (
             "titre_live", "description_live", "prix", "lien_wave", "numero_wave",
             "youtube_id", "live_debut", "live_fin", "max_appareils",
-            "whatsapp_support", "message_whatsapp", "site_url",
+            "whatsapp_support", "message_whatsapp", "site_url", "image_apercu",
         )
         valeurs = {c: (request.form.get(c) or "").strip() for c in champs}
 
@@ -686,6 +688,28 @@ def admin_config():
         # ne le reconnaissait pas et il ressortait mal formaté sur la page de
         # paiement, là où le client en a le plus besoin.
         valeurs["numero_wave"] = u.normaliser_telephone(valeurs["numero_wave"])
+
+        # L'affiche personnalisée doit être une image joignable par WhatsApp,
+        # et surtout pas une miniature YouTube : celle-ci porte l'identifiant
+        # du direct non répertorié, qui deviendrait lisible dans chaque
+        # message partagé.
+        affiche = valeurs["image_apercu"]
+        if affiche:
+            if "img.youtube.com" in affiche or "ytimg.com" in affiche:
+                flash(
+                    "⚠️ Cette image vient de YouTube : elle révélerait le lien "
+                    "de votre direct dans tous les messages WhatsApp. "
+                    "Utilisez une affiche à vous, ou laissez le champ vide.",
+                    "erreur",
+                )
+                return redirect(url_for("admin_config"))
+
+            if not affiche.lower().startswith(("http://", "https://")):
+                flash(
+                    "L'adresse de l'affiche doit commencer par https://",
+                    "erreur",
+                )
+                return redirect(url_for("admin_config"))
 
         valeurs["whatsapp_support"] = u.normaliser_telephone(
             valeurs["whatsapp_support"]
