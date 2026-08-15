@@ -417,6 +417,21 @@ legend {
   color: var(--wave);
 }
 
+/* Étape pas encore atteinte : visible, mais visiblement en attente */
+.etape-en-attente { opacity: .5; }
+.etape-en-attente .puce { background: var(--surface); }
+
+/* Confirmation du numéro enregistré, avant le départ vers Wave */
+.numero-valide {
+  margin: .6rem 0 0 !important;
+  padding: .55rem .8rem;
+  border-radius: var(--rayon-sm);
+  background: rgba(47, 191, 107, .12);
+  color: var(--succes) !important;
+  font-size: .88rem;
+}
+.numero-valide strong { color: var(--succes) !important; }
+
 /* Le formulaire est déjà dans une étape numérotée : il respire moins */
 .formulaire--serre { margin-top: .35rem; gap: .25rem; }
 .formulaire--serre label { margin-top: .35rem; }

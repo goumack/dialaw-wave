@@ -3,8 +3,8 @@
 
 {% block contenu %}
 
-{# Page unique : le paiement s'ouvre dans un onglet séparé, la confirmation
-   reste visible juste en dessous. Le client ne navigue plus en arrière. #}
+{# Le numéro est demandé AVANT le départ vers Wave : au retour, le navigateur
+   a souvent déchargé la page et le client devrait tout ressaisir. #}
 
 <section class="carte">
   <p class="fil">Étape 2 sur 3 — paiement</p>
@@ -22,100 +22,131 @@
   </div>
 
   <ol class="etapes-paiement">
-    <li>
-      <span class="puce puce--wave">1</span>
-      <div>
-        <strong>Payez</strong>
-        <p>Wave s'ouvre dans un nouvel onglet. Envoyez
-           <strong>exactement {{ commande.montant | montant }} {{ devise }}</strong>.
-           {% if lien_wave %}Cette page reste ouverte derrière.{% endif %}</p>
-
-        {% if lien_wave %}
-          {% if navigateur_integre %}
-            {# Page ouverte depuis WhatsApp ou Facebook : leur mini-navigateur
-               ne sait pas lancer l'application Wave. #}
-            <div class="alerte alerte--info avertissement-navigateur">
-              <strong>Ouvrez cette page dans votre navigateur.</strong>
-              Vous êtes arrivé ici depuis une application (WhatsApp, Facebook…)
-              et son navigateur intégré ne peut pas ouvrir Wave — il vous
-              enverrait sur Play Store.
-              <br><br>
-              Appuyez sur le menu <strong>⋮</strong> en haut à droite, puis sur
-              <strong>« Ouvrir dans Chrome »</strong>.
-              Sinon, utilisez le paiement par numéro ci-dessous : il fonctionne
-              partout.
-            </div>
-          {% endif %}
-
-          <a class="bouton bouton--wave bouton--large" href="{{ lien_wave }}"
-             target="_blank" rel="noopener">
-            Payer {{ commande.montant | montant }} {{ devise }} avec Wave
-          </a>
-          <p class="aide">
-            L'application Wave doit être installée et à jour. Si le bouton
-            vous emmène sur Play Store, voyez juste en dessous.
-          </p>
-        {% else %}
-          <p class="alerte alerte--erreur">
-            Le lien de paiement Wave n'est pas encore configuré.
-            {% if cfg.numero_wave %}
-              Envoyez le montant au <strong>{{ cfg.numero_wave | tel }}</strong>
-              sur Wave, puis confirmez ci-dessous.
-            {% else %}
-              Merci de contacter le support.
-            {% endif %}
-          </p>
-        {% endif %}
-
-        {% if cfg.numero_wave and lien_wave %}
-          {# Sur certains téléphones, le lien Wave renvoie vers le Play Store
-             au lieu d'ouvrir l'application. Le paiement au numéro évite
-             complètement ce détour. #}
-          {# Déplié d'office quand le lien a peu de chances de fonctionner #}
-          <details class="secours" {% if navigateur_integre %}open{% endif %}>
-            <summary>Le lien renvoie vers Play Store ou ne s'ouvre pas ?</summary>
-            <div class="secours-corps">
-              <p>C'est sans gravité — payez directement depuis votre
-                 application Wave :</p>
-              <ol>
-                <li>Ouvrez <strong>Wave</strong> sur votre téléphone.</li>
-                <li>Choisissez <strong>Envoyer de l'argent</strong>.</li>
-                <li>Numéro du destinataire :
-                    <strong class="numero-secours">{{ cfg.numero_wave | tel }}</strong></li>
-                <li>Montant :
-                    <strong>{{ commande.montant | montant }} {{ devise }}</strong></li>
-                <li>Motif, si Wave le demande :
-                    <strong>{{ commande.reference }}</strong></li>
-              </ol>
-              <p>Revenez ensuite ici et confirmez votre paiement ci-dessous.</p>
-            </div>
-          </details>
-        {% endif %}
-      </div>
-    </li>
 
     <li>
-      <span class="puce">2</span>
+      <span class="puce">1</span>
       <div>
-        <strong>Revenez ici et confirmez</strong>
-        <p>Vérifiez le numéro Wave qui a payé, puis validez. C'est lui qui
-           nous permet de retrouver votre transaction.</p>
+        <strong>Indiquez le numéro qui va payer</strong>
+        <p>C'est lui qui nous permet de retrouver votre paiement dans Wave.
+           Renseignez-le maintenant : vous n'aurez plus à y penser en
+           revenant.</p>
 
         <form method="post" class="formulaire formulaire--serre">
-          <label for="numero_wave">Numéro Wave qui a payé</label>
+          <label for="numero_wave">Numéro Wave qui paie</label>
           <input type="tel" id="numero_wave" name="numero_wave"
-                 value="{{ commande.telephone | tel }}"
+                 value="{{ commande.numero_wave_client or commande.telephone | tel }}"
                  placeholder="77 123 45 67" required inputmode="tel">
           <small class="aide">
-            Si quelqu'un d'autre a payé pour vous, remplacez par son numéro.
+            Si quelqu'un d'autre paie pour vous, mettez son numéro.
           </small>
 
           <button type="submit" class="bouton bouton--principal bouton--large">
-            J'ai payé — obtenir mon mot de passe
+            {% if commande.statut == 'a_verifier' %}
+              Modifier le numéro
+            {% else %}
+              Valider mon numéro
+            {% endif %}
           </button>
         </form>
+
+        {% if commande.statut == 'a_verifier' %}
+          <p class="numero-valide">
+            Numéro enregistré :
+            <strong>{{ commande.numero_wave_client | tel }}</strong>
+          </p>
+        {% endif %}
       </div>
     </li>
+
+    <li class="{% if commande.statut != 'a_verifier' %}etape-en-attente{% endif %}">
+      <span class="puce puce--wave">2</span>
+      <div>
+        <strong>Payez {{ commande.montant | montant }} {{ devise }}</strong>
+
+        {% if commande.statut != 'a_verifier' %}
+          <p>Validez d'abord votre numéro ci-dessus.</p>
+        {% else %}
+          <p>Wave s'ouvre dans un nouvel onglet. Envoyez
+             <strong>exactement {{ commande.montant | montant }} {{ devise }}</strong>.
+             Cette page reste ouverte derrière.</p>
+
+          {% if lien_wave %}
+            {% if navigateur_integre %}
+              {# Navigateur intégré d'une application : incapable de lancer Wave #}
+              <div class="alerte alerte--info avertissement-navigateur">
+                <strong>Ouvrez cette page dans votre navigateur.</strong>
+                Vous êtes arrivé ici depuis une application (WhatsApp,
+                Facebook…) et son navigateur intégré ne peut pas ouvrir Wave —
+                il vous enverrait sur Play Store.
+                <br><br>
+                Appuyez sur le menu <strong>⋮</strong> en haut à droite, puis
+                sur <strong>« Ouvrir dans Chrome »</strong>. Sinon, utilisez le
+                paiement par numéro ci-dessous : il fonctionne partout.
+              </div>
+            {% endif %}
+
+            <a class="bouton bouton--wave bouton--large" href="{{ lien_wave }}"
+               target="_blank" rel="noopener">
+              Payer {{ commande.montant | montant }} {{ devise }} avec Wave
+            </a>
+            <p class="aide">
+              L'application Wave doit être installée et à jour. Si le bouton
+              vous emmène sur Play Store, voyez juste en dessous.
+            </p>
+          {% else %}
+            <p class="alerte alerte--erreur">
+              Le lien de paiement Wave n'est pas encore configuré.
+              {% if cfg.numero_wave %}
+                Envoyez le montant au
+                <strong>{{ cfg.numero_wave | tel }}</strong> sur Wave.
+              {% else %}
+                Merci de contacter le support.
+              {% endif %}
+            </p>
+          {% endif %}
+
+          {% if cfg.numero_wave %}
+            {# Déplié d'office quand le lien a peu de chances de fonctionner #}
+            <details class="secours" {% if navigateur_integre %}open{% endif %}>
+              <summary>Le lien renvoie vers Play Store ou ne s'ouvre pas ?</summary>
+              <div class="secours-corps">
+                <p>C'est sans gravité — payez directement depuis votre
+                   application Wave :</p>
+                <ol>
+                  <li>Ouvrez <strong>Wave</strong> sur votre téléphone.</li>
+                  <li>Choisissez <strong>Envoyer de l'argent</strong>.</li>
+                  <li>Numéro du destinataire :
+                      <strong class="numero-secours">{{ cfg.numero_wave | tel }}</strong></li>
+                  <li>Montant :
+                      <strong>{{ commande.montant | montant }} {{ devise }}</strong></li>
+                  <li>Motif, si Wave le demande :
+                      <strong>{{ commande.reference }}</strong></li>
+                </ol>
+              </div>
+            </details>
+          {% endif %}
+        {% endif %}
+      </div>
+    </li>
+
+    <li class="{% if commande.statut != 'a_verifier' %}etape-en-attente{% endif %}">
+      <span class="puce">3</span>
+      <div>
+        <strong>Recevez votre mot de passe</strong>
+        {% if commande.statut == 'a_verifier' %}
+          <p>Dès que nous voyons votre paiement, votre mot de passe arrive sur
+             WhatsApp et s'affiche sur votre page de suivi.</p>
+          <a class="bouton bouton--discret bouton--large"
+             href="{{ url_for('suivi', reference=commande.reference) }}">
+            Suivre ma commande
+          </a>
+        {% else %}
+          <p>Après votre paiement, votre mot de passe vous sera envoyé sur
+             WhatsApp.</p>
+        {% endif %}
+      </div>
+    </li>
+
   </ol>
 
   <p class="sous-bouton">

@@ -224,11 +224,12 @@ def paiement(reference):
 
         bd.declarer_paiement(commande["reference"], numero)
         flash(
-            "Merci ! Votre paiement est en cours de vérification. "
-            "Vous recevrez votre mot de passe par WhatsApp dans quelques minutes.",
+            "Numéro enregistré. Vous pouvez maintenant payer avec Wave.",
             "succes",
         )
-        return redirect(url_for("suivi", reference=commande["reference"]))
+        # On reste sur la page de paiement : le client doit encore payer.
+        # Le renvoyer vers le suivi lui ferait croire que c'est terminé.
+        return redirect(url_for("paiement", reference=commande["reference"]))
 
     if commande["statut"] not in ("nouvelle", "a_verifier"):
         return redirect(url_for("suivi", reference=commande["reference"]))
