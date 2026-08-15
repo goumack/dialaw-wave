@@ -23,7 +23,11 @@
 
     <p class="code-geant">{{ commande.code_acces }}</p>
 
-    <a class="bouton bouton--principal bouton--large" href="{{ url_for('acces') }}">
+    {# Le mot de passe voyage dans l'adresse : le client n'a rien à recopier.
+       Sans cela, le bouton renvoyait vers un formulaire vide alors que le
+       mot de passe était affiché juste au-dessus. #}
+    <a class="bouton bouton--principal bouton--large"
+       href="{{ url_for('acces', code_du_lien=commande.code_acces) }}">
       Regarder le direct
     </a>
     <p class="sous-bouton">
