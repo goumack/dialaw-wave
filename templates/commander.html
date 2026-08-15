@@ -1,40 +1,53 @@
 {% extends "base.html" %}
-{% block titre %}Commander{% endblock %}
+{% block titre %}Acheter mon accès{% endblock %}
 
 {% block contenu %}
 
+{# Tout sur une seule page : coordonnées, numéro payeur et départ vers Wave.
+   Chaque écran supplémentaire fait perdre des clients en route. #}
+
 <section class="carte carte--formulaire">
-  <p class="fil">Étape 1 sur 3 — votre numéro</p>
-  <h1>Réserver mon accès</h1>
+  <h1>Acheter mon accès</h1>
   <p class="carte-texte">
-    Votre mot de passe sera envoyé sur ce numéro WhatsApp.
-    Vérifiez-le bien avant de continuer.
+    {{ cfg.titre_live }} — votre mot de passe arrive sur WhatsApp dès que
+    votre paiement est vérifié.
   </p>
 
+  <div class="recap">
+    <span>Montant à payer</span>
+    <strong>{{ cfg.prix | montant }} {{ devise }}</strong>
+  </div>
+
   <form method="post" class="formulaire">
-    <label for="telephone">Numéro WhatsApp</label>
+
+    <label for="telephone">Numéro WhatsApp <span class="obligatoire">*</span></label>
     <input type="tel" id="telephone" name="telephone" value="{{ telephone }}"
            placeholder="77 123 45 67" required inputmode="tel"
            autocomplete="tel" autofocus>
+    <small class="aide">C'est ici que vous recevrez votre mot de passe.</small>
+
+    <label for="numero_wave">Numéro qui va payer sur Wave
+      <span class="obligatoire">*</span></label>
+    <input type="tel" id="numero_wave" name="numero_wave"
+           value="{{ numero_wave }}" placeholder="Le même, ou un autre"
+           required inputmode="tel">
     <small class="aide">
-      C'est le seul champ obligatoire.
+      Il nous permet de retrouver votre paiement. Si quelqu'un paie pour vous,
+      mettez son numéro.
     </small>
 
     <label for="nom">Votre nom <span class="facultatif">(facultatif)</span></label>
     <input type="text" id="nom" name="nom" value="{{ nom }}"
            placeholder="Ex. Awa Diop" autocomplete="name">
-    <small class="aide">
-      Utile pour vous retrouver plus vite si vous nous écrivez.
-    </small>
 
-    <div class="recap">
-      <span>Montant à payer</span>
-      <strong>{{ cfg.prix | montant }} {{ devise }}</strong>
-    </div>
-
-    <button type="submit" class="bouton bouton--principal bouton--large">
-      Continuer vers le paiement
+    <button type="submit" class="bouton bouton--wave bouton--large">
+      Payer {{ cfg.prix | montant }} {{ devise }} avec Wave
     </button>
+
+    <p class="sous-bouton">
+      Wave s'ouvre dans un nouvel onglet. Revenez ensuite ici : votre page de
+      suivi vous attendra.
+    </p>
   </form>
 </section>
 

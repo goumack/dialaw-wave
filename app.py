@@ -184,22 +184,37 @@ def commander():
     if request.method == "POST":
         nom = " ".join((request.form.get("nom") or "").split())
         saisie_tel = request.form.get("telephone", "")
+        saisie_wave = request.form.get("numero_wave", "")
         telephone = u.normaliser_telephone(saisie_tel)
+        numero_wave = u.normaliser_telephone(saisie_wave)
 
-        # Seul le numéro WhatsApp est indispensable : c'est par lui que le
-        # mot de passe sera livré. Exiger le nom ferait abandonner des clients.
+        def reafficher(message):
+            flash(message, "erreur")
+            return render_template("commander.html", nom=nom,
+                                   telephone=saisie_tel,
+                                   numero_wave=saisie_wave)
+
+        # Le nom reste facultatif : l'exiger ferait abandonner des clients.
         if not telephone:
-            flash("Numéro WhatsApp invalide. Exemple attendu : 77 123 45 67.",
-                  "erreur")
-            return render_template("commander.html", nom=nom, telephone=saisie_tel)
+            return reafficher(
+                "Numéro WhatsApp invalide. Exemple attendu : 77 123 45 67."
+            )
+        if not numero_wave:
+            return reafficher(
+                "Numéro Wave invalide. Exemple attendu : 77 123 45 67."
+            )
 
         if not nom:
             nom = "Client " + telephone[-4:]
 
+        # Tout est saisi d'un coup : la commande part directement en
+        # vérification, sans écran intermédiaire.
         reference = bd.creer_commande(nom, telephone, entier(config.get("prix"), 0))
-        return redirect(url_for("paiement", reference=reference))
+        bd.declarer_paiement(reference, numero_wave)
+        return redirect(url_for("suivi", reference=reference))
 
-    return render_template("commander.html", nom="", telephone="")
+    return render_template("commander.html", nom="", telephone="",
+                           numero_wave="")
 
 
 @app.route("/paiement/<reference>", methods=["GET", "POST"])
@@ -265,6 +280,12 @@ def suivi(reference):
         "suivi.html",
         commande=commande,
         lien_support=lien_support,
+        # Le paiement se fait depuis cette page : le client vient de commander
+        # et n'a pas encore payé.
+        lien_wave=config.get("lien_wave", ""),
+        navigateur_integre=u.est_navigateur_integre(
+            request.headers.get("User-Agent", "")
+        ),
         # La page se rafraîchit seule tant que la commande n'est pas tranchée
         auto_refresh=commande["statut"] in ("nouvelle", "a_verifier"),
     )
